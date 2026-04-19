@@ -3,6 +3,8 @@ export type NotificationPayload = {
   message: string;
   open_url: string;
   sound: "cha_ching" | "warm_soft_error";
+  image_url?: string;
+  interruption_level: "passive" | "active" | "time-sensitive";
 };
 
 export function buildNotification(input: {
@@ -10,6 +12,7 @@ export function buildNotification(input: {
   url: string;
   oldTotal: number;
   newTotal: number;
+  imageUrl?: string;
 }): NotificationPayload {
   const fmt = (n: number) => `€${n.toFixed(2)}`;
   return {
@@ -17,6 +20,8 @@ export function buildNotification(input: {
     message: `${fmt(input.oldTotal)} → ${fmt(input.newTotal)}`,
     open_url: input.url,
     sound: input.newTotal < input.oldTotal ? "cha_ching" : "warm_soft_error",
+    image_url: input.imageUrl,
+    interruption_level: "time-sensitive",
   };
 }
 

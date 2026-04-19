@@ -1,29 +1,32 @@
 import type { Shop } from "@/lib/db/schema";
-import type { Scraper } from "./types";
-import { bolScraper } from "./bol";
-import { coolblueScraper } from "./coolblue";
-import { allYourGamesScraper } from "./allyourgames";
-import { nedgameScraper } from "./nedgame";
+import type { ShopConnector } from "./types";
+import { bol } from "./bol";
+import { coolblue } from "./coolblue";
+import { allYourGames } from "./allyourgames";
+import { nedgame } from "./nedgame";
 
-const scrapers: Record<Shop, Scraper> = {
-  bol: bolScraper,
-  coolblue: coolblueScraper,
-  allyourgames: allYourGamesScraper,
-  nedgame: nedgameScraper,
-};
+const connectors: ShopConnector[] = [bol, coolblue, allYourGames, nedgame];
+const byShop = new Map<Shop, ShopConnector>(connectors.map((c) => [c.shop, c]));
 
-export function getScraper(shop: Shop): Scraper {
-  return scrapers[shop];
+export function getConnector(shop: Shop): ShopConnector {
+  const c = byShop.get(shop);
+  if (!c) throw new Error(`Unknown shop: ${shop}`);
+  return c;
 }
 
 export function shopFromUrl(url: string): Shop | null {
   let host: string;
-  try { host = new URL(url).hostname.toLowerCase(); } catch { return null; }
-  if (host.endsWith("bol.com")) return "bol";
-  if (host.endsWith("coolblue.be") || host.endsWith("coolblue.nl")) return "coolblue";
-  if (host.endsWith("allyourgames.nl")) return "allyourgames";
-  if (host.endsWith("nedgame.nl")) return "nedgame";
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+  for (const c of connectors) {
+    if (c.hosts.some((h) => host === h || host.endsWith("." + h))) {
+      return c.shop;
+    }
+  }
   return null;
 }
 
-export type { Scraper, ScrapeResult } from "./types";
+export type { ShopConnector, ScrapeResult, ShippingFlags, ShippingEnv } from "./types";

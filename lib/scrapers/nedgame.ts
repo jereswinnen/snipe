@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import { extractProductJsonLd } from "./jsonld";
-import type { Scraper, ScrapeResult } from "./types";
+import type { ShopConnector, ScrapeResult } from "./types";
 
 function parseMoney(text: string | undefined): number | undefined {
   if (!text) return undefined;
@@ -12,8 +12,10 @@ function parseMoney(text: string | undefined): number | undefined {
   return Number.isFinite(n) && n > 0 ? n : undefined;
 }
 
-export const nedgameScraper: Scraper = {
+export const nedgame: ShopConnector = {
   shop: "nedgame",
+  hosts: ["nedgame.nl"],
+
   scrape(html): ScrapeResult {
     const ld = extractProductJsonLd(html);
     if (ld?.name && ld.price != null) {
@@ -32,5 +34,10 @@ export const nedgameScraper: Scraper = {
     const imageUrl = $('meta[property="og:image"]').attr("content");
     if (!name || price == null) throw new Error("nedgame: could not find price/name");
     return { name, price, imageUrl };
+  },
+
+  shipping(price, flags) {
+    if (flags.isPreOrder) return 0;
+    return price >= 175 ? 0 : 6.99;
   },
 };

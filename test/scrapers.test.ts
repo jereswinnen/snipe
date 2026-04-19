@@ -1,37 +1,37 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { bolScraper } from "../lib/scrapers/bol.ts";
-import { coolblueScraper } from "../lib/scrapers/coolblue.ts";
-import { allYourGamesScraper } from "../lib/scrapers/allyourgames.ts";
-import { nedgameScraper } from "../lib/scrapers/nedgame.ts";
-import { shopFromUrl, getScraper } from "../lib/scrapers/index.ts";
+import { bol } from "../lib/scrapers/bol.ts";
+import { coolblue } from "../lib/scrapers/coolblue.ts";
+import { allYourGames } from "../lib/scrapers/allyourgames.ts";
+import { nedgame } from "../lib/scrapers/nedgame.ts";
+import { shopFromUrl, getConnector } from "../lib/scrapers/index.ts";
 
-test("bol scraper extracts name + price from fixture", () => {
+test("bol connector extracts name + price from fixture", () => {
   const html = readFileSync("test/fixtures/bol.html", "utf8");
-  const r = bolScraper.scrape(html, "https://www.bol.com/nl/nl/p/x/12345/");
+  const r = bol.scrape(html, "https://www.bol.com/nl/nl/p/x/12345/");
   assert.ok(r.name.length > 0, `got name: ${r.name}`);
   assert.ok(r.price > 0, `got price: ${r.price}`);
   assert.equal(typeof r.soldByBol, "boolean");
 });
 
-test("coolblue scraper extracts name + price from fixture", () => {
+test("coolblue connector extracts name + price from fixture", () => {
   const html = readFileSync("test/fixtures/coolblue.html", "utf8");
-  const r = coolblueScraper.scrape(html, "https://www.coolblue.be/nl/product/x");
+  const r = coolblue.scrape(html, "https://www.coolblue.be/nl/product/x");
   assert.ok(r.name.length > 0);
   assert.ok(r.price > 0);
 });
 
-test("allyourgames scraper extracts name + price from fixture", () => {
+test("allyourgames connector extracts name + price from fixture", () => {
   const html = readFileSync("test/fixtures/allyourgames.html", "utf8");
-  const r = allYourGamesScraper.scrape(html, "https://www.allyourgames.nl/x");
+  const r = allYourGames.scrape(html, "https://www.allyourgames.nl/x");
   assert.ok(r.name.length > 0);
   assert.ok(r.price > 0);
 });
 
-test("nedgame scraper extracts name + price from fixture", () => {
+test("nedgame connector extracts name + price from fixture", () => {
   const html = readFileSync("test/fixtures/nedgame.html", "utf8");
-  const r = nedgameScraper.scrape(html, "https://www.nedgame.nl/x");
+  const r = nedgame.scrape(html, "https://www.nedgame.nl/x");
   assert.ok(r.name.length > 0);
   assert.ok(r.price > 0);
 });
@@ -46,7 +46,7 @@ test("shopFromUrl detects hostnames", () => {
   assert.equal(shopFromUrl("https://example.com/"), null);
 });
 
-test("getScraper returns scraper per shop", () => {
-  assert.equal(getScraper("bol").shop, "bol");
-  assert.equal(getScraper("nedgame").shop, "nedgame");
+test("getConnector returns connector per shop", () => {
+  assert.equal(getConnector("bol").shop, "bol");
+  assert.equal(getConnector("nedgame").shop, "nedgame");
 });

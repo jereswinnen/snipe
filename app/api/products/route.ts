@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { env } from "@/lib/env";
-import { shopFromUrl, getScraper } from "@/lib/scrapers";
+import { shopFromUrl, getConnector } from "@/lib/scrapers";
 import { fetchPage, canonicalizeUrl } from "@/lib/scrapers/fetch";
 import { shippingCost } from "@/lib/shipping";
 import { findProductByUrl, insertProduct, listProducts, insertHistory } from "@/lib/db/queries";
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   let scrape;
   try {
     const html = await fetchPage(url);
-    scrape = getScraper(shop).scrape(html, url);
+    scrape = getConnector(shop).scrape(html, url);
   } catch (e) {
     return NextResponse.json(
       { error: "scrape_failed", detail: (e as Error).message },

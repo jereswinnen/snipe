@@ -1,6 +1,6 @@
 import { env } from "@/lib/env";
 import { shippingCost } from "@/lib/shipping";
-import { getScraper } from "@/lib/scrapers";
+import { getConnector } from "@/lib/scrapers";
 import { fetchPage } from "@/lib/scrapers/fetch";
 import { buildNotification, sendNotification } from "@/lib/notify";
 import { insertHistory, updateProduct } from "@/lib/db/queries";
@@ -13,8 +13,7 @@ export type CheckOutcome =
 export async function checkProduct(product: Product): Promise<CheckOutcome> {
   try {
     const html = await fetchPage(product.url);
-    const scraper = getScraper(product.shop);
-    const result = scraper.scrape(html, product.url);
+    const result = getConnector(product.shop).scrape(html, product.url);
     const shipping = shippingCost(
       product.shop,
       result.price,
@@ -58,6 +57,7 @@ export async function checkProduct(product: Product): Promise<CheckOutcome> {
             url: product.url,
             oldTotal: prevTotal,
             newTotal: totalCost,
+            imageUrl: result.imageUrl ?? product.imageUrl ?? undefined,
           }),
         );
       } catch (e) {

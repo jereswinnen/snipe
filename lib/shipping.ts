@@ -1,9 +1,8 @@
 import type { Shop } from "@/lib/db/schema";
+import { getConnector } from "@/lib/scrapers";
+import type { ShippingFlags } from "@/lib/scrapers";
 
-export type ShippingFlags = {
-  soldByBol?: boolean | null;
-  isPreOrder?: boolean;
-};
+export type { ShippingFlags };
 
 export type ShippingConfig = {
   allYourGamesFlat?: number;
@@ -15,17 +14,7 @@ export function shippingCost(
   flags: ShippingFlags,
   config: ShippingConfig = {},
 ): number {
-  switch (shop) {
-    case "bol": {
-      if (flags.soldByBol === false) return 0;
-      return price >= 25 ? 0 : 2.99;
-    }
-    case "coolblue":
-      return 0;
-    case "allyourgames":
-      return config.allYourGamesFlat ?? 5.95;
-    case "nedgame":
-      if (flags.isPreOrder) return 0;
-      return price >= 175 ? 0 : 6.99;
-  }
+  return getConnector(shop).shipping(price, flags, {
+    allYourGamesFlat: config.allYourGamesFlat ?? 5.95,
+  });
 }

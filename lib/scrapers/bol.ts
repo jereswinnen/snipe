@@ -1,8 +1,10 @@
 import { extractProductJsonLd } from "./jsonld";
-import type { Scraper, ScrapeResult } from "./types";
+import type { ShopConnector, ScrapeResult } from "./types";
 
-export const bolScraper: Scraper = {
+export const bol: ShopConnector = {
   shop: "bol",
+  hosts: ["bol.com"],
+
   scrape(html: string): ScrapeResult {
     const ld = extractProductJsonLd(html);
     if (!ld || ld.price == null || !ld.name) {
@@ -16,5 +18,10 @@ export const bolScraper: Scraper = {
     }
     const soldByBol = ld.sellerName ? /\bbol(\.com)?\b/i.test(ld.sellerName) : false;
     return { name: ld.name, price: ld.price, imageUrl: ld.image, soldByBol };
+  },
+
+  shipping(price, flags) {
+    if (flags.soldByBol === false) return 0;
+    return price >= 25 ? 0 : 2.99;
   },
 };

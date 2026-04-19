@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getProduct, getHistory } from "@/lib/db/queries";
-import { money, relativeTime } from "@/lib/format";
+import { money, relativeTime, formatDateTime } from "@/lib/format";
 import ProductControls from "./ProductControls";
 
 export const dynamic = "force-dynamic";
@@ -56,7 +56,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             {history.map((h) => (
               <li key={h.id} className="py-1.5 flex justify-between">
                 <span className="text-neutral-400">
-                  {new Date(h.checkedAt).toLocaleString()}
+                  {formatDateTime(h.checkedAt)}
                 </span>
                 <span>
                   {money(h.totalCost)}{" "}
