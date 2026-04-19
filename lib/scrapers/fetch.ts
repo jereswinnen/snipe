@@ -13,9 +13,10 @@ const HEADERS: Record<string, string> = {
   "Sec-Ch-Ua-Platform": '"macOS"',
   "Sec-Fetch-Dest": "document",
   "Sec-Fetch-Mode": "navigate",
-  "Sec-Fetch-Site": "none",
+  "Sec-Fetch-Site": "cross-site",
   "Sec-Fetch-User": "?1",
   "Upgrade-Insecure-Requests": "1",
+  Referer: "https://www.google.com/",
   DNT: "1",
 };
 

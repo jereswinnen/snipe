@@ -23,6 +23,18 @@ function firstOffer(offers: unknown): Record<string, unknown> | undefined {
   return undefined;
 }
 
+function coerceImage(img: unknown): string | undefined {
+  if (!img) return undefined;
+  if (typeof img === "string") return img;
+  if (Array.isArray(img)) return coerceImage(img[0]);
+  if (typeof img === "object") {
+    const o = img as Record<string, unknown>;
+    if (typeof o.url === "string") return o.url;
+    if (typeof o["@id"] === "string") return o["@id"];
+  }
+  return undefined;
+}
+
 function nodesFromBlob(blob: unknown): unknown[] {
   if (!blob) return [];
   if (Array.isArray(blob)) return blob.flatMap(nodesFromBlob);
@@ -55,7 +67,7 @@ export function extractProductJsonLd(html: string): JsonLdProduct | null {
       const n = node as Record<string, unknown>;
       const offer = firstOffer(n.offers);
       const price = coercePrice(offer?.price);
-      const image = Array.isArray(n.image) ? (n.image[0] as string) : (n.image as string | undefined);
+      const image = coerceImage(n.image);
       const sellerRaw = offer?.seller as Record<string, unknown> | undefined;
       return {
         name: typeof n.name === "string" ? n.name : undefined,
