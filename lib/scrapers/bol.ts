@@ -20,8 +20,7 @@ export const bol: ShopConnector = {
     return { name: ld.name, price: ld.price, imageUrl: ld.image, soldByBol };
   },
 
-  shipping(price, flags) {
-    if (flags.soldByBol === false) return 0;
-    return price >= 25 ? 0 : 2.99;
+  shipping() {
+    return 0;
   },
 };
