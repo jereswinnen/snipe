@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { bolScraper } from "../lib/scrapers/bol.ts";
 import { coolblueScraper } from "../lib/scrapers/coolblue.ts";
 import { allYourGamesScraper } from "../lib/scrapers/allyourgames.ts";
+import { nedgameScraper } from "../lib/scrapers/nedgame.ts";
 
 test("bol scraper extracts name + price from fixture", () => {
   const html = readFileSync("test/fixtures/bol.html", "utf8");
@@ -23,6 +24,13 @@ test("coolblue scraper extracts name + price from fixture", () => {
 test("allyourgames scraper extracts name + price from fixture", () => {
   const html = readFileSync("test/fixtures/allyourgames.html", "utf8");
   const r = allYourGamesScraper.scrape(html, "https://www.allyourgames.nl/x");
+  assert.ok(r.name.length > 0);
+  assert.ok(r.price > 0);
+});
+
+test("nedgame scraper extracts name + price from fixture", () => {
+  const html = readFileSync("test/fixtures/nedgame.html", "utf8");
+  const r = nedgameScraper.scrape(html, "https://www.nedgame.nl/x");
   assert.ok(r.name.length > 0);
   assert.ok(r.price > 0);
 });
