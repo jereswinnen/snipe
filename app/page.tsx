@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Truck } from "lucide-react";
 import { desc, asc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db/client";
 import { money, relativeTime } from "@/lib/format";
@@ -68,8 +69,11 @@ export default async function Home() {
                 </div>
                 <Sparkline values={values} />
                 <div className="text-right">
-                  <div className="text-sm">{money(product.lastTotalCost)}</div>
-                  <div className="text-xs text-neutral-400">{money(product.lastPrice)} + ship</div>
+                  <div className="text-sm">{money(product.lastPrice)}</div>
+                  <div className="text-xs text-neutral-400 flex items-center justify-end gap-1">
+                    <Truck size={12} aria-hidden="true" />
+                    {money(product.lastTotalCost)}
+                  </div>
                 </div>
               </li>
             );

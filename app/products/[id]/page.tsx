@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Truck } from "lucide-react";
 import { getProduct, getHistory } from "@/lib/db/queries";
 import { money, relativeTime, formatDateTime } from "@/lib/format";
 import ProductControls from "./ProductControls";
@@ -34,10 +35,11 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 <span className="ml-2 text-red-400">error: {product.lastError}</span>
               )}
             </p>
-            <div className="mt-2 text-sm">
-              {money(product.lastTotalCost)}{" "}
-              <span className="text-neutral-400">
-                ({money(product.lastPrice)} + shipping)
+            <div className="mt-2 text-sm flex items-center gap-3">
+              <span>{money(product.lastPrice)}</span>
+              <span className="text-neutral-400 flex items-center gap-1">
+                <Truck size={14} aria-hidden="true" />
+                {money(product.lastTotalCost)}
               </span>
             </div>
           </div>

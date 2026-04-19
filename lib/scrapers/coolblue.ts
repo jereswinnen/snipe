@@ -5,8 +5,8 @@ export const coolblue: ShopConnector = {
   shop: "coolblue",
   hosts: ["coolblue.be", "coolblue.nl"],
 
-  scrape(html): ScrapeResult {
-    const ld = extractProductJsonLd(html);
+  scrape(html, url): ScrapeResult {
+    const ld = extractProductJsonLd(html, url);
     if (!ld || ld.price == null || !ld.name) {
       throw new Error("coolblue: JSON-LD Product not found");
     }

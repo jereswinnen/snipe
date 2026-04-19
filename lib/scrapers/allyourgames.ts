@@ -5,8 +5,8 @@ export const allYourGames: ShopConnector = {
   shop: "allyourgames",
   hosts: ["allyourgames.nl"],
 
-  scrape(html): ScrapeResult {
-    const ld = extractProductJsonLd(html);
+  scrape(html, url): ScrapeResult {
+    const ld = extractProductJsonLd(html, url);
     if (!ld || ld.price == null || !ld.name) {
       throw new Error("allyourgames: JSON-LD Product not found");
     }

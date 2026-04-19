@@ -5,8 +5,8 @@ export const bol: ShopConnector = {
   shop: "bol",
   hosts: ["bol.com"],
 
-  scrape(html: string): ScrapeResult {
-    const ld = extractProductJsonLd(html);
+  scrape(html: string, url: string): ScrapeResult {
+    const ld = extractProductJsonLd(html, url);
     if (!ld || ld.price == null || !ld.name) {
       const ldCount = (html.match(/application\/ld\+json/g) ?? []).length;
       const looksLikeChallenge = /captcha|are you human|access denied|cloudflare/i.test(html);

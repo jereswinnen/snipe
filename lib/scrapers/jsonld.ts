@@ -74,30 +74,68 @@ function isProductLike(node: unknown): node is Record<string, unknown> {
 const SCRIPT_RE =
   /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
 
-function extractFromNode(n: Record<string, unknown>): JsonLdProduct | null {
+function pickVariant(
+  variants: Record<string, unknown>[],
+  pageUrl: string | undefined,
+): Record<string, unknown> {
+  if (pageUrl) {
+    // Bol ProductGroup pages end with .../<long-numeric-id>/ — match that against variant IDs.
+    const idMatch = pageUrl.match(/\/(\d{8,})(?:[/?#]|$)/);
+    if (idMatch) {
+      const targetId = idMatch[1];
+      const byId = variants.find((v) => {
+        const pid = typeof v.productID === "string" ? v.productID : null;
+        const atId = typeof v["@id"] === "string" ? v["@id"] : null;
+        return pid === targetId || (atId != null && atId.includes(targetId));
+      });
+      if (byId) return byId;
+    }
+    // Fallback: match by canonical URL.
+    const canonical = pageUrl.split("?")[0].replace(/\/$/, "");
+    const byUrl = variants.find((v) => {
+      const vUrl = typeof v.url === "string" ? v.url.split("?")[0].replace(/\/$/, "") : null;
+      return vUrl === canonical;
+    });
+    if (byUrl) return byUrl;
+  }
+  return variants[0];
+}
+
+function extractFromNode(
+  n: Record<string, unknown>,
+  pageUrl: string | undefined,
+): JsonLdProduct | null {
   const types = nodeType(n);
   let offer = firstOffer(n.offers);
   let price = priceFromOffer(offer);
   let seller = sellerFromOffer(offer);
+  let name = typeof n.name === "string" ? n.name : undefined;
+  let image = coerceImage(n.image);
 
-  // ProductGroup: prefer the first variant (which has a real Offer w/ price+seller)
+  // ProductGroup: pick the variant whose ID matches the page URL, else the first variant.
   if (types.includes("ProductGroup") && Array.isArray(n.hasVariant) && n.hasVariant.length > 0) {
-    const variant = n.hasVariant[0] as Record<string, unknown>;
+    const variants = n.hasVariant as Record<string, unknown>[];
+    const variant = pickVariant(variants, pageUrl);
     const variantOffer = firstOffer(variant.offers);
     const variantPrice = priceFromOffer(variantOffer);
     const variantSeller = sellerFromOffer(variantOffer);
     if (variantPrice != null) price = variantPrice;
     if (variantSeller) seller = variantSeller;
+    const variantName = typeof variant.name === "string" ? variant.name : undefined;
+    if (variantName) name = variantName;
+    const variantImage = coerceImage(variant.image);
+    if (variantImage) image = variantImage;
     offer = variantOffer ?? offer;
   }
 
-  const name = typeof n.name === "string" ? n.name : undefined;
-  const image = coerceImage(n.image);
   if (price == null && !name) return null;
   return { name, price, image, sellerName: seller };
 }
 
-export function extractProductJsonLd(html: string): JsonLdProduct | null {
+export function extractProductJsonLd(
+  html: string,
+  pageUrl?: string,
+): JsonLdProduct | null {
   const matches = html.matchAll(SCRIPT_RE);
   for (const m of matches) {
     const text = m[1].trim();
@@ -106,7 +144,7 @@ export function extractProductJsonLd(html: string): JsonLdProduct | null {
     try { parsed = JSON.parse(text); } catch { continue; }
     for (const node of nodesFromBlob(parsed)) {
       if (!isProductLike(node)) continue;
-      const r = extractFromNode(node as Record<string, unknown>);
+      const r = extractFromNode(node as Record<string, unknown>, pageUrl);
       if (r) return r;
     }
   }

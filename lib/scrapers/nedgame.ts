@@ -16,8 +16,8 @@ export const nedgame: ShopConnector = {
   shop: "nedgame",
   hosts: ["nedgame.nl"],
 
-  scrape(html): ScrapeResult {
-    const ld = extractProductJsonLd(html);
+  scrape(html, url): ScrapeResult {
+    const ld = extractProductJsonLd(html, url);
     if (ld?.name && ld.price != null) {
       return { name: ld.name, price: ld.price, imageUrl: ld.image };
     }

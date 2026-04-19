@@ -15,17 +15,19 @@ Tests run via `tsx --test` (no extra framework).
 
 1. Install Postgres locally (or point at a remote DB).
 2. `cp .env.example .env.local` and fill in real values.
-3. `npm install`
-4. `npm run db:generate` (only after schema changes)
-5. `npm run db:migrate`
-6. `npm run dev`
+3. `pnpm install`
+4. `pnpm db:generate` (only after schema changes)
+5. `pnpm db:migrate`
+6. `pnpm dev`
 
 Open http://localhost:3000 — you'll be redirected to `/login`.
+
+This project uses **pnpm**. Don't use `npm` or `yarn`.
 
 ## Tests
 
 ```
-npm test
+pnpm test
 ```
 
 ## Deploy to Railway
@@ -41,13 +43,17 @@ npm test
    - `ALLYOURGAMES_SHIPPING` — optional, default `5.95`
 4. After the first deploy, run the migration once via the Railway shell:
    ```
-   npm run db:migrate
+   pnpm db:migrate
    ```
-5. Add a **Cron Job** under the service settings:
-   - Schedule: `0 */4 * * *` (every 4 hours)
-   - Command: `curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/check"`
+5. Set up the cron. Easiest: use an external cron service (e.g. cron-job.org, free) that hits
+   `POST $APP_URL/api/cron/check` with header `Authorization: Bearer $CRON_SECRET` on whatever
+   schedule you want (`0 */4 * * *` is a good default).
 
-The cron job adds essentially zero cost — it hits an endpoint on the always-running web service.
+   Or run it inside Railway as a separate service: deploy from this repo, set
+   `CRON_SECRET` and `APP_URL` as env vars (use `https://` — http redirects downgrade POST to
+   GET), cron schedule `0 */4 * * *`, custom start command `node scripts/cron-ping.mjs`.
+
+The cron work is negligible cost — each firing runs a few seconds.
 
 ## Supported shops
 
@@ -60,10 +66,9 @@ The cron job adds essentially zero cost — it hits an endpoint on the always-ru
 
 Adding a shop:
 1. Add the shop key to `shops` in `lib/db/schema.ts`.
-2. Add a scraper module in `lib/scrapers/<shop>.ts` exporting a `Scraper`.
-3. Wire it into the dispatcher in `lib/scrapers/index.ts` (both `scrapers` map and `shopFromUrl`).
-4. Extend `shippingCost` in `lib/shipping.ts`.
-5. Save a fixture under `test/fixtures/<shop>.html` and add a test in `test/scrapers.test.ts`.
+2. Create `lib/scrapers/<shop>.ts` exporting a `ShopConnector` (hosts, scrape, shipping all in one file).
+3. Register it in the `connectors` array in `lib/scrapers/index.ts`.
+4. Drop a fixture at `test/fixtures/<shop>.html` and add a test in `test/scrapers.test.ts`.
 
 ## Scraper fixtures
 
