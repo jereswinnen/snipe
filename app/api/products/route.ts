@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import { shopFromUrl, getScraper } from "@/lib/scrapers";
-import { fetchPage } from "@/lib/scrapers/fetch";
+import { fetchPage, canonicalizeUrl } from "@/lib/scrapers/fetch";
 import { shippingCost } from "@/lib/shipping";
 import { findProductByUrl, insertProduct, listProducts, insertHistory } from "@/lib/db/queries";
 
@@ -20,7 +20,8 @@ export async function GET() {
 export async function POST(req: Request) {
   const parsed = body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad_request" }, { status: 400 });
-  const { url, targetPrice, isPreOrder } = parsed.data;
+  const { targetPrice, isPreOrder } = parsed.data;
+  const url = canonicalizeUrl(parsed.data.url);
 
   const shop = shopFromUrl(url);
   if (!shop) return NextResponse.json({ error: "unsupported_shop" }, { status: 400 });
