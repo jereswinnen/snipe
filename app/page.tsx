@@ -4,7 +4,7 @@ import { desc, asc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db/client";
 import { money, relativeTime } from "@/lib/format";
 import { Sparkline } from "@/components/Sparkline";
-import AddProductForm from "./AddProductForm";
+import HeaderActions from "./HeaderActions";
 
 export const dynamic = "force-dynamic";
 
@@ -26,55 +26,68 @@ async function getData() {
 export default async function Home() {
   const rows = await getData();
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100">
-      <div className="mx-auto max-w-3xl p-6 space-y-6">
+    <main className="min-h-screen bg-bg text-fg">
+      <div className="p-4 space-y-4">
         <header className="flex items-center justify-between">
           <h1 className="text-xl font-semibold">Snipe</h1>
-          <form action="/api/auth/logout" method="post">
-            <button className="text-sm text-neutral-400 hover:text-neutral-100">Logout</button>
-          </form>
+          <HeaderActions />
         </header>
-        <AddProductForm />
-        <ul className="space-y-2">
+        <ul className="grid gap-1 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
           {rows.map(({ product, history }) => {
             const hit =
               product.targetPrice != null &&
               Number(product.lastTotalCost) <= Number(product.targetPrice);
             const values = history.map((h) => Number(h.totalCost));
+            const previous = values.length >= 2 ? values[values.length - 2] : null;
+            const current = Number(product.lastTotalCost);
             return (
               <li
                 key={product.id}
                 className={
-                  "rounded border border-neutral-800 bg-neutral-900 p-3 flex items-center gap-4 " +
-                  (hit ? "ring-1 ring-emerald-500/60" : "")
+                  "bg-card rounded-3xl p-5 flex flex-col items-center text-center gap-3 " +
+                  (hit ? "ring-2 ring-emerald-500/60" : "")
                 }
               >
-                {product.imageUrl ? (
-                  <img src={product.imageUrl} alt="" className="h-12 w-12 rounded object-cover" />
-                ) : (
-                  <div className="h-12 w-12 rounded bg-neutral-800" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <Link href={`/products/${product.id}`} className="block truncate hover:underline">
-                    {product.name}
-                  </Link>
-                  <div className="text-xs text-neutral-400 flex items-center gap-2">
-                    <span className="uppercase tracking-wide">{product.shop}</span>
-                    <span>·</span>
-                    <span>{relativeTime(product.lastCheckedAt)}</span>
+                <div className="w-full flex items-center justify-between text-[11px] uppercase tracking-wider text-muted">
+                  <span>{product.shop}</span>
+                  <span className="flex items-center gap-1">
                     {product.lastError && (
                       <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500" title={product.lastError} />
                     )}
-                  </div>
+                    {relativeTime(product.lastCheckedAt)}
+                  </span>
                 </div>
-                <Sparkline values={values} />
-                <div className="text-right">
-                  <div className="text-sm">{money(product.lastPrice)}</div>
-                  <div className="text-xs text-neutral-400 flex items-center justify-end gap-1">
-                    <Truck size={12} aria-hidden="true" />
+
+                <Link href={`/products/${product.id}`} className="block">
+                  {product.imageUrl ? (
+                    <img
+                      src={product.imageUrl}
+                      alt=""
+                      className="h-28 w-auto max-w-full object-contain"
+                    />
+                  ) : (
+                    <div className="h-28 w-28" />
+                  )}
+                </Link>
+
+                <Link
+                  href={`/products/${product.id}`}
+                  className="text-sm font-medium leading-snug line-clamp-2 hover:underline"
+                >
+                  {product.name}
+                </Link>
+
+                <div className="flex flex-col items-center gap-1">
+                  <div className="text-lg font-semibold flex items-center gap-1">
+                    <Truck size={14} aria-hidden="true" className="text-muted" />
                     {money(product.lastTotalCost)}
                   </div>
+                  {previous != null && previous !== current && (
+                    <div className="text-xs text-muted">was {money(previous)}</div>
+                  )}
                 </div>
+
+                <Sparkline values={values} width={160} height={28} />
               </li>
             );
           })}
