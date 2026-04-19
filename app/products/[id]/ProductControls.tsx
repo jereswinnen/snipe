@@ -1,68 +1,105 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Check } from "lucide-react";
+import { money } from "@/lib/format";
 
 type Props = {
   id: number;
   shop: string;
   targetPrice: number | null;
   isPreOrder: boolean;
+  currentTotal: number;
 };
 
-export default function ProductControls({ id, shop, targetPrice, isPreOrder }: Props) {
+export default function ProductControls({
+  id,
+  shop,
+  targetPrice,
+  isPreOrder,
+  currentTotal,
+}: Props) {
   const router = useRouter();
   const [target, setTarget] = useState(targetPrice != null ? String(targetPrice) : "");
   const [preorder, setPreorder] = useState(isPreOrder);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [savedPulse, setSavedPulse] = useState(false);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const savedTarget = targetPrice;
+  const parsed = target.trim() === "" ? null : Number(target);
+  const dirty = (parsed ?? null) !== (savedTarget ?? null);
+
+  useEffect(() => () => { if (savedTimer.current) clearTimeout(savedTimer.current); }, []);
 
   async function patch(body: Record<string, unknown>) {
-    setBusy("save");
     await fetch(`/api/products/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
-    setBusy(null);
     router.refresh();
   }
 
-  async function checkNow() {
-    setBusy("check");
-    await fetch(`/api/products/${id}/check`, { method: "POST" });
-    setBusy(null);
-    router.refresh();
+  async function commitTarget() {
+    if (!dirty) return;
+    if (parsed != null && !Number.isFinite(parsed)) return;
+    await patch({ targetPrice: parsed });
+    setSavedPulse(true);
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setSavedPulse(false), 1200);
   }
 
-  async function remove() {
-    if (!confirm("Delete this product?")) return;
-    setBusy("delete");
-    await fetch(`/api/products/${id}`, { method: "DELETE" });
-    setBusy(null);
-    window.location.href = "/";
-  }
+  const hit = savedTarget != null && currentTotal <= savedTarget;
+  const delta =
+    savedTarget != null ? Number((currentTotal - savedTarget).toFixed(2)) : null;
 
   return (
-    <div className="space-y-3 rounded border border-neutral-800 bg-neutral-900 p-3">
-      <div className="flex items-center gap-2">
-        <label className="text-sm text-neutral-400 w-32">Target price</label>
-        <input
-          type="number"
-          step="0.01"
-          value={target}
-          onChange={(e) => setTarget(e.target.value)}
-          className="w-28 rounded bg-neutral-950 border border-neutral-800 px-2 py-1"
-          placeholder="—"
-        />
-        <button
-          onClick={() => patch({ targetPrice: target ? Number(target) : null })}
-          className="rounded bg-neutral-800 px-3 py-1 text-sm"
-          disabled={busy !== null}
-        >
-          Save
-        </button>
+    <section className="bg-card rounded-3xl p-6 space-y-5">
+      <div>
+        <div className="text-xs uppercase tracking-wider text-muted mb-1">
+          Target price
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-light text-muted">€</span>
+          <input
+            type="number"
+            step="0.01"
+            inputMode="decimal"
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            onBlur={commitTarget}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
+            placeholder="—"
+            className="min-w-0 flex-1 bg-transparent text-3xl font-light tabular-nums outline-none placeholder:text-fg/20"
+          />
+          {savedPulse && (
+            <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+              <Check size={14} /> saved
+            </span>
+          )}
+        </div>
+        <div className="mt-1 text-xs">
+          {savedTarget == null ? (
+            <span className="text-muted">no target set</span>
+          ) : hit ? (
+            <span className="text-emerald-600 font-medium">
+              target reached · {money(currentTotal)}
+            </span>
+          ) : (
+            <span className="text-muted">
+              {money(Math.abs(delta!))} above target
+            </span>
+          )}
+        </div>
       </div>
+
       {shop === "nedgame" && (
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm text-muted">
           <input
             type="checkbox"
             checked={preorder}
@@ -74,22 +111,6 @@ export default function ProductControls({ id, shop, targetPrice, isPreOrder }: P
           Pre-order (free shipping)
         </label>
       )}
-      <div className="flex gap-2 pt-2">
-        <button
-          onClick={checkNow}
-          disabled={busy !== null}
-          className="rounded bg-emerald-600 px-3 py-1 text-sm disabled:opacity-50"
-        >
-          {busy === "check" ? "Checking…" : "Check now"}
-        </button>
-        <button
-          onClick={remove}
-          disabled={busy !== null}
-          className="rounded bg-red-900/70 px-3 py-1 text-sm disabled:opacity-50"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
+    </section>
   );
 }
