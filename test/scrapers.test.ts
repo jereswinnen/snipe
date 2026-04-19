@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { bolScraper } from "../lib/scrapers/bol.ts";
+import { coolblueScraper } from "../lib/scrapers/coolblue.ts";
 
 test("bol scraper extracts name + price from fixture", () => {
   const html = readFileSync("test/fixtures/bol.html", "utf8");
@@ -9,4 +10,11 @@ test("bol scraper extracts name + price from fixture", () => {
   assert.ok(r.name.length > 0, `got name: ${r.name}`);
   assert.ok(r.price > 0, `got price: ${r.price}`);
   assert.equal(typeof r.soldByBol, "boolean");
+});
+
+test("coolblue scraper extracts name + price from fixture", () => {
+  const html = readFileSync("test/fixtures/coolblue.html", "utf8");
+  const r = coolblueScraper.scrape(html, "https://www.coolblue.be/nl/product/x");
+  assert.ok(r.name.length > 0);
+  assert.ok(r.price > 0);
 });
