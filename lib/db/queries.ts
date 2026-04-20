@@ -1,6 +1,11 @@
 import { eq, desc, asc, inArray, sql } from "drizzle-orm";
 import { db, schema } from "./client";
-import type { Product, ProductGroup, PriceHistoryRow } from "./schema";
+import type {
+  Device,
+  Product,
+  ProductGroup,
+  PriceHistoryRow,
+} from "./schema";
 
 // --- listings (legacy name: products) ---------------------------------------
 
@@ -202,4 +207,34 @@ export async function getListingHistory(
       sql`${schema.priceHistory.productId} = ${listingId} AND ${schema.priceHistory.checkedAt} >= ${since}`,
     )
     .orderBy(asc(schema.priceHistory.checkedAt));
+}
+
+// --- devices (APNs push targets) -------------------------------------------
+
+export async function upsertDevice(
+  row: typeof schema.devices.$inferInsert,
+): Promise<Device> {
+  const rows = await db
+    .insert(schema.devices)
+    .values(row)
+    .onConflictDoUpdate({
+      target: schema.devices.apnsToken,
+      set: {
+        bundleId: row.bundleId,
+        environment: row.environment,
+        lastSeenAt: new Date(),
+      },
+    })
+    .returning();
+  return rows[0];
+}
+
+export async function deleteDeviceByToken(apnsToken: string): Promise<void> {
+  await db
+    .delete(schema.devices)
+    .where(eq(schema.devices.apnsToken, apnsToken));
+}
+
+export async function listDevices(): Promise<Device[]> {
+  return db.select().from(schema.devices);
 }

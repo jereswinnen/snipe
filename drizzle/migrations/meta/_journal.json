@@ -50,6 +50,13 @@
       "when": 1776678917033,
       "tag": "0006_old_hitman",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776680722962,
+      "tag": "0007_faithful_grandmaster",
+      "breakpoints": true
     }
   ]
 }

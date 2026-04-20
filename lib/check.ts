@@ -7,7 +7,9 @@ import {
   buildSaleEndingNotification,
   buildScrapeFailureNotification,
   sendNotification,
+  type NotificationPayload,
 } from "@/lib/notify";
+import { fanoutApnsNotification } from "@/lib/apns";
 import {
   getProductGroup,
   insertHistory,
@@ -16,6 +18,24 @@ import {
 import type { Product } from "@/lib/db/schema";
 
 const SALE_ENDING_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Delivers a notification to every configured channel (brrr webhook and
+ * all registered APNs devices). Each channel is wrapped independently so
+ * one failing doesn't silently drop the other.
+ */
+async function notifyAll(payload: NotificationPayload): Promise<void> {
+  try {
+    await sendNotification(payload);
+  } catch (e) {
+    console.error("brrr notify failed:", (e as Error).message);
+  }
+  try {
+    await fanoutApnsNotification(payload);
+  } catch (e) {
+    console.error("apns notify failed:", (e as Error).message);
+  }
+}
 
 export type CheckOutcome =
   | { ok: true; changed: boolean; price: number; totalCost: number }
@@ -61,19 +81,15 @@ export async function checkProduct(product: Product): Promise<CheckOutcome> {
     await updateProduct(product.id, patch);
 
     if (changed) {
-      try {
-        await sendNotification(
-          buildNotification({
-            name: result.name || product.name,
-            url: product.url,
-            oldTotal: prevTotal,
-            newTotal: totalCost,
-            imageUrl: result.imageUrl ?? product.imageUrl ?? undefined,
-          }),
-        );
-      } catch (e) {
-        console.error("notify failed:", (e as Error).message);
-      }
+      await notifyAll(
+        buildNotification({
+          name: result.name || product.name,
+          url: product.url,
+          oldTotal: prevTotal,
+          newTotal: totalCost,
+          imageUrl: result.imageUrl ?? product.imageUrl ?? undefined,
+        }),
+      );
     }
 
     // Sale-ending reminder: fire once per sale window, within 24 h of end.
@@ -85,24 +101,20 @@ export async function checkProduct(product: Product): Promise<CheckOutcome> {
         : null;
       const alreadyNotified = notifiedFor === end.getTime();
       if (msLeft > 0 && msLeft <= SALE_ENDING_WINDOW_MS && !alreadyNotified) {
-        try {
-          const group = product.groupId
-            ? await getProductGroup(product.groupId)
-            : null;
-          await sendNotification(
-            buildSaleEndingNotification({
-              name: group?.title ?? result.name ?? product.name,
-              url: product.url,
-              endsAt: end,
-              salePrice: price,
-              regularPrice: result.regularPrice,
-              imageUrl: result.imageUrl ?? product.imageUrl ?? undefined,
-            }),
-          );
-          await updateProduct(product.id, { saleEndNotifiedFor: end });
-        } catch (e) {
-          console.error("sale-ending notify failed:", (e as Error).message);
-        }
+        const group = product.groupId
+          ? await getProductGroup(product.groupId)
+          : null;
+        await notifyAll(
+          buildSaleEndingNotification({
+            name: group?.title ?? result.name ?? product.name,
+            url: product.url,
+            endsAt: end,
+            salePrice: price,
+            regularPrice: result.regularPrice,
+            imageUrl: result.imageUrl ?? product.imageUrl ?? undefined,
+          }),
+        );
+        await updateProduct(product.id, { saleEndNotifiedFor: end });
       }
     }
     return { ok: true, changed, price, totalCost };
@@ -114,25 +126,21 @@ export async function checkProduct(product: Product): Promise<CheckOutcome> {
     // persists we stay silent; once a subsequent check succeeds, the
     // lastError clears and the next failure will fire again.
     if (!product.lastError) {
-      try {
-        const group = product.groupId
-          ? await getProductGroup(product.groupId)
-          : null;
-        const openUrl = product.groupId
-          ? `${env.APP_URL}/groups/${product.groupId}`
-          : product.url;
-        await sendNotification(
-          buildScrapeFailureNotification({
-            name: group?.title ?? product.name,
-            shop: product.shop,
-            error: msg,
-            openUrl,
-            imageUrl: product.imageUrl ?? undefined,
-          }),
-        );
-      } catch (err) {
-        console.error("scrape-failure notify failed:", (err as Error).message);
-      }
+      const group = product.groupId
+        ? await getProductGroup(product.groupId)
+        : null;
+      const openUrl = product.groupId
+        ? `${env.APP_URL}/groups/${product.groupId}`
+        : product.url;
+      await notifyAll(
+        buildScrapeFailureNotification({
+          name: group?.title ?? product.name,
+          shop: product.shop,
+          error: msg,
+          openUrl,
+          imageUrl: product.imageUrl ?? undefined,
+        }),
+      );
     }
     return { ok: false, error: msg };
   }
