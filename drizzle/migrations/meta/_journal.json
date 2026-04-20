@@ -22,6 +22,13 @@
       "when": 1776670119567,
       "tag": "0002_long_maginty",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776670566549,
+      "tag": "0003_watery_doomsday",
+      "breakpoints": true
     }
   ]
 }

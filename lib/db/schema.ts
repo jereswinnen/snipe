@@ -8,8 +8,18 @@ export type Shop = (typeof shops)[number];
 export const mediums = ["digital", "physical"] as const;
 export type Medium = (typeof mediums)[number];
 
+export const productGroups = pgTable("product_groups", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  imageUrl: text("image_url"),
+  targetPrice: numeric("target_price", { precision: 10, scale: 2 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
+  groupId: integer("group_id").references(() => productGroups.id, { onDelete: "cascade" }),
   url: text("url").notNull().unique(),
   shop: text("shop").$type<Shop>().notNull(),
   medium: text("medium").$type<Medium>().notNull().default("physical"),
@@ -45,3 +55,5 @@ export const priceHistory = pgTable(
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
 export type PriceHistoryRow = typeof priceHistory.$inferSelect;
+export type ProductGroup = typeof productGroups.$inferSelect;
+export type NewProductGroup = typeof productGroups.$inferInsert;
