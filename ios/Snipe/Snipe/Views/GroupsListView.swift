@@ -52,16 +52,20 @@ struct GroupsListView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 8)
 
+            if let errorMessage {
+                // Show the error inline so a silent fetch failure during a
+                // refresh doesn't just leave stale tiles on screen.
+                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+            }
+
             if isLoading && groups.isEmpty {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let errorMessage, groups.isEmpty {
-                ContentUnavailableView(
-                    "Couldn't load",
-                    systemImage: "wifi.exclamationmark",
-                    description: Text(errorMessage)
-                )
-            } else if groups.isEmpty {
+            } else if groups.isEmpty && errorMessage == nil {
                 ContentUnavailableView(
                     "Nothing tracked yet",
                     systemImage: "bag",

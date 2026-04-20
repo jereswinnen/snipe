@@ -313,12 +313,24 @@ final class APIClient: @unchecked Sendable {
         do {
             (data, response) = try await urlSession.data(for: request)
         } catch {
+            #if DEBUG
+            print("[API] \(method) \(url.absoluteString) — transport error: \(error)")
+            #endif
             throw NetworkError.transport(error)
         }
 
         guard let http = response as? HTTPURLResponse else {
             throw NetworkError.malformedResponse
         }
+
+        #if DEBUG
+        let cacheControl = http.value(forHTTPHeaderField: "Cache-Control") ?? "nil"
+        let age = http.value(forHTTPHeaderField: "Age") ?? "nil"
+        print(
+            "[API] \(method) \(url.path) → \(http.statusCode) "
+            + "(\(data.count) B, Cache-Control=\(cacheControl), Age=\(age))"
+        )
+        #endif
 
         if http.statusCode == 401 {
             throw NetworkError.unauthorized
@@ -333,6 +345,12 @@ final class APIClient: @unchecked Sendable {
         do {
             return try JSONDecoder().decode(Response.self, from: data)
         } catch {
+            #if DEBUG
+            print("[API] decode failed for \(Response.self): \(error)")
+            if let raw = String(data: data, encoding: .utf8) {
+                print("[API] raw body: \(raw.prefix(500))")
+            }
+            #endif
             throw NetworkError.decoding(error)
         }
     }
