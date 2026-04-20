@@ -6,16 +6,28 @@ import { env } from "@/lib/env";
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/cron/check"];
 
+function tokenFromRequest(request: NextRequest): string | undefined {
+  // Bearer takes precedence; native clients never have the cookie.
+  const auth = request.headers.get("authorization");
+  if (auth?.toLowerCase().startsWith("bearer ")) {
+    return auth.slice(7).trim();
+  }
+  return request.cookies.get(SESSION_COOKIE)?.value;
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return NextResponse.next();
   }
-  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  const token = tokenFromRequest(request);
   if (verifySession(env.APP_SECRET, token)) return NextResponse.next();
 
   if (pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "unauthorized", message: "Authentication required" },
+      { status: 401 },
+    );
   }
   // RSC prefetches can't parse an HTML redirect as an RSC payload — the
   // browser logs "Failed to fetch RSC payload". Return 401 so Next treats

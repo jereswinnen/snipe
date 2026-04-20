@@ -93,17 +93,23 @@ export default function UrlPrompt({
   );
 }
 
-/** Maps the API's product-create error codes to a user-facing message. */
+/**
+ * Maps the API's error envelope to a user-facing message. The API always
+ * sends `{ error, message }`; we prefer the server's message so future
+ * codes surface automatically. Fallback messages cover the codes that
+ * predate the envelope sweep, so bad deploys don't break the UX.
+ */
 export function productErrorMessage(body: {
   error?: string;
-  detail?: string;
+  message?: string;
 }): string {
+  if (body.message) return body.message;
   switch (body.error) {
-    case "duplicate":
+    case "duplicate_url":
       return "This URL is already tracked";
     case "unsupported_shop":
       return "Unsupported shop";
     default:
-      return body.detail || "Failed";
+      return "Failed";
   }
 }

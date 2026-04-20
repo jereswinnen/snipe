@@ -18,7 +18,10 @@ function shuffle<T>(arr: T[]): T[] {
 export async function POST(req: Request) {
   const auth = req.headers.get("authorization") ?? "";
   if (auth !== `Bearer ${env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "unauthorized", message: "Cron secret mismatch" },
+      { status: 401 },
+    );
   }
   const products = shuffle(await listProducts());
   let changed = 0;

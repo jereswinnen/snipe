@@ -1,42 +1,49 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { env } from "@/lib/env";
+import { respondError } from "@/lib/api/errors";
 import { shopFromUrl, getConnector } from "@/lib/scrapers";
 import { fetchPage, canonicalizeUrl } from "@/lib/scrapers/fetch";
 import { shippingCost } from "@/lib/shipping";
 import {
   findProductByUrl,
-  insertProduct,
-  insertProductGroup,
-  insertHistory,
   getProductGroup,
+  insertProduct,
+  insertHistory,
 } from "@/lib/db/queries";
 
-const body = z.object({
-  url: z.string().url(),
-  groupId: z.number().int().positive().optional(),
-  targetPrice: z.number().positive().optional(), // only honoured when creating a new group
-});
+const body = z.object({ url: z.string().url() });
 
-export async function POST(req: Request) {
+type Ctx = { params: Promise<{ id: string }> };
+
+export async function POST(req: Request, { params }: Ctx) {
+  const { id: rawId } = await params;
+  const groupId = Number(rawId);
+  if (!Number.isFinite(groupId))
+    return respondError("bad_id", 400, "Invalid group id");
+
   const parsed = body.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "bad_request" }, { status: 400 });
-  const { targetPrice, groupId } = parsed.data;
+  if (!parsed.success) return respondError("bad_request", 400, "Invalid body");
   const url = canonicalizeUrl(parsed.data.url);
 
   const shop = shopFromUrl(url);
-  if (!shop) return NextResponse.json({ error: "unsupported_shop" }, { status: 400 });
-
-  const existing = await findProductByUrl(url);
-  if (existing)
-    return NextResponse.json(
-      { error: "duplicate", id: existing.id, groupId: existing.groupId },
-      { status: 409 },
+  if (!shop)
+    return respondError(
+      "unsupported_shop",
+      400,
+      "No connector matches this URL's host",
     );
 
-  if (groupId != null) {
-    const g = await getProductGroup(groupId);
-    if (!g) return NextResponse.json({ error: "group_not_found" }, { status: 404 });
+  const group = await getProductGroup(groupId);
+  if (!group) return respondError("group_not_found", 404, "Group not found");
+
+  const existing = await findProductByUrl(url);
+  if (existing) {
+    return respondError(
+      "duplicate_url",
+      409,
+      "This URL is already tracked",
+    );
   }
 
   const connector = getConnector(shop);
@@ -45,10 +52,7 @@ export async function POST(req: Request) {
     const html = await fetchPage(url);
     scrape = await connector.scrape(html, url);
   } catch (e) {
-    return NextResponse.json(
-      { error: "scrape_failed", detail: (e as Error).message },
-      { status: 502 },
-    );
+    return respondError("scrape_failed", 502, (e as Error).message);
   }
 
   const shipping = shippingCost(
@@ -60,17 +64,8 @@ export async function POST(req: Request) {
   const totalCost = Number((scrape.price + shipping).toFixed(2));
   const price = Number(scrape.price.toFixed(2));
 
-  const group =
-    groupId != null
-      ? await getProductGroup(groupId)
-      : await insertProductGroup({
-          title: scrape.name,
-          imageUrl: scrape.imageUrl,
-          targetPrice: targetPrice !== undefined ? targetPrice.toFixed(2) : null,
-        });
-
-  const inserted = await insertProduct({
-    groupId: group!.id,
+  const listing = await insertProduct({
+    groupId: group.id,
     url,
     shop,
     medium: connector.medium,
@@ -85,10 +80,10 @@ export async function POST(req: Request) {
     lastCheckedAt: new Date(),
   });
   await insertHistory({
-    productId: inserted.id,
+    productId: listing.id,
     price: price.toFixed(2),
     totalCost: totalCost.toFixed(2),
   });
 
-  return NextResponse.json({ product: inserted, group });
+  return NextResponse.json({ listing });
 }

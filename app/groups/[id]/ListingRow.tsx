@@ -33,7 +33,7 @@ export default function ListingRow({
       : `Remove ${listing.shop} from this product?`;
     if (!confirm(msg)) return;
     setBusy(true);
-    const res = await fetch(`/api/products/${listing.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/listings/${listing.id}`, { method: "DELETE" });
     const body = (await res.json().catch(() => ({}))) as { deletedGroup?: boolean };
     if (body.deletedGroup) {
       window.location.href = "/";

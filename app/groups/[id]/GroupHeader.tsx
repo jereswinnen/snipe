@@ -14,7 +14,7 @@ export default function GroupHeader({ id, listingIds }: Props) {
     setBusy("check");
     await Promise.all(
       listingIds.map((lid) =>
-        fetch(`/api/products/${lid}/check`, { method: "POST" }),
+        fetch(`/api/listings/${lid}/check`, { method: "POST" }),
       ),
     );
     setBusy(null);

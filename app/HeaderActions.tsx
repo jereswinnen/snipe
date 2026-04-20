@@ -11,7 +11,7 @@ export default function HeaderActions() {
   const router = useRouter();
 
   async function addUrl(value: string): Promise<string | null> {
-    const res = await fetch("/api/products", {
+    const res = await fetch("/api/groups", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ url: value }),

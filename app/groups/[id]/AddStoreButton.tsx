@@ -9,10 +9,10 @@ export default function AddStoreButton({ groupId }: { groupId: number }) {
   const [open, setOpen] = useState(false);
 
   async function addUrl(value: string): Promise<string | null> {
-    const res = await fetch("/api/products", {
+    const res = await fetch(`/api/groups/${groupId}/listings`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ url: value, groupId }),
+      body: JSON.stringify({ url: value }),
     });
     if (res.ok) {
       router.refresh();
