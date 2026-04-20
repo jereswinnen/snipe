@@ -40,24 +40,6 @@ export default async function Home({
     }
   }
 
-  const shopsByGroup = new Map<number, string[]>();
-  if (rowsRaw.length) {
-    const groupIds = rowsRaw.map((r) => r.group.id);
-    const memberships = await db
-      .select({
-        groupId: schema.products.groupId,
-        shop: schema.products.shop,
-      })
-      .from(schema.products)
-      .where(inArray(schema.products.groupId, groupIds));
-    for (const m of memberships) {
-      if (m.groupId == null) continue;
-      const arr = shopsByGroup.get(m.groupId) ?? [];
-      arr.push(m.shop);
-      shopsByGroup.set(m.groupId, arr);
-    }
-  }
-
   return (
     <main className="min-h-screen bg-bg text-fg">
       <div className="p-4 space-y-4">
@@ -69,7 +51,7 @@ export default async function Home({
         <FilterChips active={mediumFilter} />
 
         <ul className="grid gap-1 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
-          {rows.map(({ group, cheapest }) => {
+          {rows.map(({ group, cheapest, shops }) => {
             const image = group.imageUrl ?? cheapest.imageUrl;
             const values = historyByProduct.get(cheapest.id) ?? [];
             const current = Number(cheapest.lastTotalCost);
@@ -81,9 +63,6 @@ export default async function Home({
             const hit =
               group.targetPrice != null &&
               Number(cheapest.lastTotalCost) <= Number(group.targetPrice);
-            // Cheapest shop first (known from the main query), then the rest.
-            const allShops = shopsByGroup.get(group.id) ?? [cheapest.shop];
-            const shops = [cheapest.shop, ...allShops.filter((s) => s !== cheapest.shop)];
 
             return (
               <li

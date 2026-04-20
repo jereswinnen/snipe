@@ -4,8 +4,9 @@ import { Truck, Download } from "lucide-react";
 import {
   getProductGroup,
   listProductsByGroup,
-  getHistory,
+  getGroupHistories,
 } from "@/lib/db/queries";
+import { buildCheapestOverTime } from "@/lib/trend";
 import { money, relativeTime, formatDateTime, formatShortDate } from "@/lib/format";
 import { TrendChart } from "@/components/TrendChart";
 import GroupHeader from "./GroupHeader";
@@ -27,42 +28,6 @@ export async function generateMetadata({
   return { title: group?.title ?? "Product" };
 }
 
-type HistoryRow = {
-  id: number;
-  productId: number;
-  price: string;
-  totalCost: string;
-  checkedAt: Date;
-};
-
-/**
- * Given per-listing histories, produce a chronological series of
- * { checkedAt, minTotal } — the cheapest total available across any
- * listing at each moment. This is the right thing to plot/summarise
- * for a multi-store group.
- */
-function buildCheapestOverTime(
-  perListing: { listingId: number; history: HistoryRow[] }[],
-): { checkedAt: Date; minTotal: number }[] {
-  const all = perListing
-    .flatMap(({ listingId, history }) =>
-      history.map((h) => ({
-        listingId,
-        checkedAt: new Date(h.checkedAt),
-        total: Number(h.totalCost),
-      })),
-    )
-    .sort((a, b) => a.checkedAt.getTime() - b.checkedAt.getTime());
-  const latest = new Map<number, number>();
-  const out: { checkedAt: Date; minTotal: number }[] = [];
-  for (const row of all) {
-    latest.set(row.listingId, row.total);
-    const minTotal = Math.min(...latest.values());
-    out.push({ checkedAt: row.checkedAt, minTotal });
-  }
-  return out;
-}
-
 export default async function GroupPage({
   params,
 }: {
@@ -79,18 +44,16 @@ export default async function GroupPage({
 
   const cheapest = listings[0]; // listProductsByGroup orders by last_total_cost asc
 
-  const historiesRaw = await Promise.all(
-    listings.map((l) => getHistory(l.id, 365)),
-  );
-  const historiesByListing = new Map(
-    listings.map((l, i) => [l.id, historiesRaw[i]]),
-  );
+  const historiesByListing = await getGroupHistories(id, 365);
   const shopByListing = new Map(listings.map((l) => [l.id, l.shop]));
 
   const combined = buildCheapestOverTime(
-    listings.map((l, i) => ({ listingId: l.id, history: historiesRaw[i] })),
+    listings.map((l) => ({
+      listingId: l.id,
+      history: historiesByListing.get(l.id) ?? [],
+    })),
   );
-  const values = combined.map((p) => p.minTotal);
+  const values = combined.map((p) => p.value);
   const current = Number(cheapest.lastTotalCost);
   const previous = values.length >= 2 ? values[values.length - 2] : null;
   const low = values.length ? Math.min(...values) : current;
@@ -102,12 +65,10 @@ export default async function GroupPage({
     .sort((a, b) => (a.id === cheapest.id ? -1 : b.id === cheapest.id ? 1 : 0))
     .map((l) => {
       const rows = historiesByListing.get(l.id) ?? [];
-      const points = [...rows]
-        .reverse()
-        .map((h) => ({
-          t: new Date(h.checkedAt).toISOString(),
-          v: Number(h.totalCost),
-        }));
+      const points = rows.map((h) => ({
+        t: new Date(h.checkedAt).toISOString(),
+        v: Number(h.totalCost),
+      }));
       return { shop: l.shop, points };
     })
     .filter((s) => s.points.length > 0);

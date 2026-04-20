@@ -1,6 +1,6 @@
-import { eq, desc, asc, sql } from "drizzle-orm";
+import { eq, desc, asc, inArray, sql } from "drizzle-orm";
 import { db, schema } from "./client";
-import type { Product, ProductGroup } from "./schema";
+import type { Product, ProductGroup, PriceHistoryRow } from "./schema";
 
 // --- listings (legacy name: products) ---------------------------------------
 
@@ -100,15 +100,17 @@ export async function deleteProductGroup(id: number) {
 export type GroupWithCheapest = {
   group: ProductGroup;
   cheapest: Product;
+  shops: string[]; // cheapest first, then other shops
 };
 
 /**
  * Returns every group together with the one listing that currently has the
- * lowest total cost. Groups without listings are excluded. Sorted by most
- * recently updated group.
+ * lowest total cost, plus the shop names of every listing in the group
+ * (cheapest shop listed first). Groups without listings are excluded.
+ * Sorted by most recently updated group.
  */
 export async function listGroupsWithCheapest(): Promise<GroupWithCheapest[]> {
-  const rows = await db
+  const cheapestRows = await db
     .selectDistinctOn([schema.productGroups.id], {
       group: schema.productGroups,
       cheapest: schema.products,
@@ -123,7 +125,81 @@ export async function listGroupsWithCheapest(): Promise<GroupWithCheapest[]> {
       asc(schema.products.lastTotalCost),
       asc(schema.products.id),
     );
-  return rows.sort(
+
+  if (cheapestRows.length === 0) return [];
+
+  const groupIds = cheapestRows.map((r) => r.group.id);
+  const members = await db
+    .select({
+      groupId: schema.products.groupId,
+      shop: schema.products.shop,
+    })
+    .from(schema.products)
+    .where(inArray(schema.products.groupId, groupIds));
+
+  const shopsByGroup = new Map<number, string[]>();
+  for (const m of members) {
+    if (m.groupId == null) continue;
+    const arr = shopsByGroup.get(m.groupId) ?? [];
+    arr.push(m.shop);
+    shopsByGroup.set(m.groupId, arr);
+  }
+
+  const merged = cheapestRows.map(({ group, cheapest }) => {
+    const all = shopsByGroup.get(group.id) ?? [cheapest.shop];
+    const shops = [cheapest.shop, ...all.filter((s) => s !== cheapest.shop)];
+    return { group, cheapest, shops };
+  });
+
+  return merged.sort(
     (a, b) => b.group.updatedAt.getTime() - a.group.updatedAt.getTime(),
   );
+}
+
+/**
+ * Returns every listing's price history within the given window (days),
+ * keyed by listingId. Chronological ascending within each listing.
+ */
+export async function getGroupHistories(
+  groupId: number,
+  days: number,
+): Promise<Map<number, PriceHistoryRow[]>> {
+  const listings = await listProductsByGroup(groupId);
+  if (listings.length === 0) return new Map();
+  const since = new Date(Date.now() - days * 86_400_000);
+  const rows = await db
+    .select()
+    .from(schema.priceHistory)
+    .where(
+      sql`${schema.priceHistory.productId} IN (${sql.join(
+        listings.map((l) => sql`${l.id}`),
+        sql`, `,
+      )}) AND ${schema.priceHistory.checkedAt} >= ${since}`,
+    )
+    .orderBy(asc(schema.priceHistory.checkedAt));
+  const out = new Map<number, PriceHistoryRow[]>();
+  for (const h of rows) {
+    const arr = out.get(h.productId) ?? [];
+    arr.push(h);
+    out.set(h.productId, arr);
+  }
+  return out;
+}
+
+/**
+ * Returns history for one listing within the given window (days).
+ * Chronological ascending.
+ */
+export async function getListingHistory(
+  listingId: number,
+  days: number,
+): Promise<PriceHistoryRow[]> {
+  const since = new Date(Date.now() - days * 86_400_000);
+  return db
+    .select()
+    .from(schema.priceHistory)
+    .where(
+      sql`${schema.priceHistory.productId} = ${listingId} AND ${schema.priceHistory.checkedAt} >= ${since}`,
+    )
+    .orderBy(asc(schema.priceHistory.checkedAt));
 }
