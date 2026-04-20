@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import { respondError } from "@/lib/api/errors";
+import { respondError, respondJson } from "@/lib/api/errors";
 import { getListingHistory, getProduct } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
@@ -23,5 +22,5 @@ export async function GET(req: Request, { params }: Ctx) {
     price: Number(r.price),
     totalCost: Number(r.totalCost),
   }));
-  return NextResponse.json({ days, points });
+  return respondJson({ days, points });
 }

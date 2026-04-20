@@ -23,10 +23,26 @@ export type ApiErrorBody = {
   message: string;
 };
 
+/** Headers attached to every API response — Snipe data is always live, so
+ *  no intermediary (CDN, Service Worker, URL cache) should keep it around. */
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+  Pragma: "no-cache",
+};
+
 export function respondError(
   code: ApiErrorCode,
   status: number,
   message: string,
 ): NextResponse {
-  return NextResponse.json<ApiErrorBody>({ error: code, message }, { status });
+  return NextResponse.json<ApiErrorBody>(
+    { error: code, message },
+    { status, headers: NO_STORE_HEADERS },
+  );
+}
+
+/** JSON response with no-store cache semantics. Replace plain
+ *  `NextResponse.json(...)` calls with this in every API handler. */
+export function respondJson<T>(body: T, status = 200): NextResponse {
+  return NextResponse.json(body, { status, headers: NO_STORE_HEADERS });
 }

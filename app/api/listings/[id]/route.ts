@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import { respondError } from "@/lib/api/errors";
+import { respondError, respondJson } from "@/lib/api/errors";
 import {
   countProductsInGroup,
   deleteProduct,
@@ -17,7 +16,7 @@ export async function GET(_req: Request, { params }: Ctx) {
   if (!Number.isFinite(id)) return respondError("bad_id", 400, "Invalid id");
   const listing = await getProduct(id);
   if (!listing) return respondError("not_found", 404, "Listing not found");
-  return NextResponse.json({ listing });
+  return respondJson({ listing });
 }
 
 export async function DELETE(_req: Request, { params }: Ctx) {
@@ -38,5 +37,5 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     }
   }
 
-  return NextResponse.json({ ok: true, deletedGroup });
+  return respondJson({ ok: true, deletedGroup });
 }

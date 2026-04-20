@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
-import { respondError } from "@/lib/api/errors";
+import { respondError, respondJson } from "@/lib/api/errors";
 import {
   getProductGroup,
   updateProductGroup,
@@ -25,7 +24,7 @@ export async function GET(_req: Request, { params }: Ctx) {
   const group = await getProductGroup(id);
   if (!group) return respondError("not_found", 404, "Group not found");
   const listings = await listProductsByGroup(id);
-  return NextResponse.json({ group, listings });
+  return respondJson({ group, listings });
 }
 
 export async function PATCH(req: Request, { params }: Ctx) {
@@ -43,7 +42,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
     patchRow.targetPrice = parsed.data.targetPrice.toFixed(2);
 
   await updateProductGroup(id, patchRow);
-  return NextResponse.json({ ok: true });
+  return respondJson({ ok: true });
 }
 
 export async function DELETE(_req: Request, { params }: Ctx) {
@@ -51,5 +50,5 @@ export async function DELETE(_req: Request, { params }: Ctx) {
   const id = Number(rawId);
   if (!Number.isFinite(id)) return respondError("bad_id", 400, "Invalid id");
   await deleteProductGroup(id);
-  return NextResponse.json({ ok: true });
+  return respondJson({ ok: true });
 }

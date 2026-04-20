@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import { respondError } from "@/lib/api/errors";
+import { respondError, respondJson } from "@/lib/api/errors";
 import { getProduct } from "@/lib/db/queries";
 import { checkProduct } from "@/lib/check";
 
@@ -12,5 +11,5 @@ export async function POST(_req: Request, { params }: Ctx) {
   const listing = await getProduct(id);
   if (!listing) return respondError("not_found", 404, "Listing not found");
   const outcome = await checkProduct(listing);
-  return NextResponse.json(outcome);
+  return respondJson(outcome);
 }

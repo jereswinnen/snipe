@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
-import { respondError } from "@/lib/api/errors";
+import { respondError, respondJson } from "@/lib/api/errors";
 import { upsertDevice } from "@/lib/db/queries";
 
 const body = z.object({
@@ -17,5 +16,5 @@ export async function POST(req: Request) {
     bundleId: parsed.data.bundleId,
     environment: parsed.data.environment,
   });
-  return NextResponse.json({ device });
+  return respondJson({ device });
 }

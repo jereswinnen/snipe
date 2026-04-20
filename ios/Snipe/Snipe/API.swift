@@ -100,9 +100,15 @@ final class APIClient: @unchecked Sendable {
     private let baseURL: URL
     private let urlSession: URLSession
 
-    init(baseURL: URL = Config.apiBaseURL, urlSession: URLSession = .shared) {
+    init(baseURL: URL = Config.apiBaseURL, urlSession: URLSession? = nil) {
         self.baseURL = baseURL
-        self.urlSession = urlSession
+        // Ephemeral session — no persistent URL cache, no cookies, no
+        // credential storage. Snipe data changes constantly; URLSession.shared's
+        // shared URL cache has no reason to exist here.
+        let config = URLSessionConfiguration.ephemeral
+        config.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        config.httpAdditionalHeaders = [:]
+        self.urlSession = urlSession ?? URLSession(configuration: config)
     }
 
     // MARK: - Auth

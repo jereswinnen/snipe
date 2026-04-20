@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import { respondError } from "@/lib/api/errors";
+import { respondError, respondJson } from "@/lib/api/errors";
 import {
   getGroupHistories,
   getProductGroup,
@@ -33,5 +32,5 @@ export async function GET(req: Request, { params }: Ctx) {
     })),
   );
 
-  return NextResponse.json({ days, series, cheapestOverTime });
+  return respondJson({ days, series, cheapestOverTime });
 }

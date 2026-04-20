@@ -1,7 +1,6 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { env } from "@/lib/env";
-import { respondError } from "@/lib/api/errors";
+import { respondError, respondJson } from "@/lib/api/errors";
 import { shopFromUrl, getConnector } from "@/lib/scrapers";
 import { fetchPage, canonicalizeUrl } from "@/lib/scrapers/fetch";
 import { shippingCost } from "@/lib/shipping";
@@ -28,7 +27,7 @@ export async function GET(req: Request) {
   const filtered = mediumFilter
     ? rows.filter((r) => r.cheapest.medium === mediumFilter)
     : rows;
-  return NextResponse.json({ groups: filtered });
+  return respondJson({ groups: filtered });
 }
 
 export async function POST(req: Request) {
@@ -99,5 +98,5 @@ export async function POST(req: Request) {
     totalCost: totalCost.toFixed(2),
   });
 
-  return NextResponse.json({ group, listing });
+  return respondJson({ group, listing });
 }

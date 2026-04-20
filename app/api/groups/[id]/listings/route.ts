@@ -1,7 +1,6 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { env } from "@/lib/env";
-import { respondError } from "@/lib/api/errors";
+import { respondError, respondJson } from "@/lib/api/errors";
 import { shopFromUrl, getConnector } from "@/lib/scrapers";
 import { fetchPage, canonicalizeUrl } from "@/lib/scrapers/fetch";
 import { shippingCost } from "@/lib/shipping";
@@ -85,5 +84,5 @@ export async function POST(req: Request, { params }: Ctx) {
     totalCost: totalCost.toFixed(2),
   });
 
-  return NextResponse.json({ listing });
+  return respondJson({ listing });
 }

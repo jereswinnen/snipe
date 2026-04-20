@@ -15,7 +15,10 @@ export async function POST(req: Request) {
   const token = signSession(env.APP_SECRET, Date.now());
   // Web client reads the cookie; native clients keep the token body value
   // in Keychain and send it as `Authorization: Bearer <token>`.
-  const res = NextResponse.json({ ok: true, token });
+  const res = NextResponse.json(
+    { ok: true, token },
+    { headers: { "Cache-Control": "no-store" } },
+  );
   res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
