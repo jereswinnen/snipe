@@ -179,12 +179,12 @@ export default async function GroupPage({
           <TrendChart points={trendPoints} height={160} className="w-full" />
         </section>
 
-        <section className="bg-card rounded-3xl p-6 space-y-1">
-          <div className="flex items-baseline justify-between mb-2">
+        <section className="bg-card rounded-3xl p-6">
+          <div className="flex items-baseline justify-between mb-4">
             <h2 className="text-xs uppercase tracking-wider text-muted">Stores</h2>
             <AddStoreButton groupId={group.id} />
           </div>
-          <ul className="divide-y divide-border">
+          <ul className="space-y-2">
             {listings.map((l) => (
               <ListingRow
                 key={l.id}
