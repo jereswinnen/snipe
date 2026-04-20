@@ -1,99 +1,8 @@
 import Foundation
 
-// MARK: - Errors
-
-/// Matches the server's stable error envelope (see docs/API.md).
-struct APIError: Error, Decodable, Sendable {
-    let error: String
-    let message: String?
-
-    /// Convenience for surfacing a user-facing string regardless of code.
-    var userMessage: String {
-        if let message, !message.isEmpty { return message }
-        switch error {
-        case "duplicate_url": return "This URL is already tracked."
-        case "unsupported_shop": return "Unsupported shop."
-        case "scrape_failed": return "Couldn't read the shop page."
-        case "unauthorized": return "Please sign in again."
-        case "group_not_found": return "Group not found."
-        case "not_found": return "Not found."
-        default: return "Something went wrong."
-        }
-    }
-}
-
-enum NetworkError: Error, CustomStringConvertible {
-    case unauthorized
-    case api(APIError, status: Int)
-    case decoding(Error)
-    case transport(Error)
-    case malformedResponse
-
-    var description: String {
-        switch self {
-        case .unauthorized: return "Unauthorized"
-        case .api(let e, let status): return "API \(status): \(e.error) — \(e.userMessage)"
-        case .decoding(let e): return "Decoding failed: \(e)"
-        case .transport(let e): return "Network error: \(e.localizedDescription)"
-        case .malformedResponse: return "Malformed response"
-        }
-    }
-}
-
-// MARK: - Token store
-
-/// Thin Keychain wrapper. Only one token is ever stored (single-user app),
-/// keyed by bundle id.
-enum TokenStore {
-    private static var service: String { Bundle.main.bundleIdentifier ?? "snipe" }
-    private static let account = "session"
-
-    static func load() -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var ref: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &ref)
-        guard status == errSecSuccess,
-              let data = ref as? Data,
-              let token = String(data: data, encoding: .utf8) else { return nil }
-        return token
-    }
-
-    static func save(_ token: String) {
-        let data = Data(token.utf8)
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        let attrs: [String: Any] = [kSecValueData as String: data]
-        let status = SecItemUpdate(query as CFDictionary, attrs as CFDictionary)
-        if status == errSecItemNotFound {
-            var addQuery = query
-            addQuery[kSecValueData as String] = data
-            SecItemAdd(addQuery as CFDictionary, nil)
-        }
-    }
-
-    static func clear() {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        SecItemDelete(query as CFDictionary)
-    }
-}
-
-// MARK: - Client
-
 /// HTTP client aimed at the Snipe JSON API. Injects the bearer token and
-/// surfaces the typed error envelope. One shared instance per app.
+/// surfaces the typed error envelope. One shared instance per app; owns an
+/// ephemeral URLSession so no response is ever read from a cache.
 final class APIClient: @unchecked Sendable {
     static let shared = APIClient()
 
@@ -102,9 +11,6 @@ final class APIClient: @unchecked Sendable {
 
     init(baseURL: URL = Config.apiBaseURL, urlSession: URLSession? = nil) {
         self.baseURL = baseURL
-        // Ephemeral session — no persistent URL cache, no cookies, no
-        // credential storage. Snipe data changes constantly; URLSession.shared's
-        // shared URL cache has no reason to exist here.
         let config = URLSessionConfiguration.ephemeral
         config.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         config.httpAdditionalHeaders = [:]
@@ -155,14 +61,7 @@ final class APIClient: @unchecked Sendable {
         try await send(method: "GET", path: "/api/groups/\(id)")
     }
 
-    struct UpdateGroupBody: Encodable {
-        let title: String?
-        let imageUrl: String?
-        let targetPrice: Double??
-    }
-
     func updateGroup(id: Int, targetPrice: Double?) async throws {
-        // Using a manual dictionary so we can distinguish "omit" from "null".
         var body: [String: Any?] = [:]
         if let targetPrice { body["targetPrice"] = targetPrice }
         else { body["targetPrice"] = NSNull() }
@@ -233,9 +132,9 @@ final class APIClient: @unchecked Sendable {
         let environment: String
     }
 
-    struct RegisterDeviceResponse: Decodable, Sendable { let device: Device }
+    struct RegisterDeviceResponse: Decodable, Sendable { let device: PushDevice }
 
-    func registerDevice(apnsToken: String, environment: APNSEnvironment) async throws -> Device {
+    func registerDevice(apnsToken: String, environment: APNSEnvironment) async throws -> PushDevice {
         let bundle = Bundle.main.bundleIdentifier ?? "be.jeremys.snipe"
         let res: RegisterDeviceResponse = try await send(
             method: "POST",
@@ -296,8 +195,6 @@ final class APIClient: @unchecked Sendable {
         }
         var request = URLRequest(url: url)
         request.httpMethod = method
-        // Snipe data is always live; skip URLSession's shared URL cache so a
-        // "Reload all" on one screen can't serve stale data on another.
         request.cachePolicy = .reloadIgnoringLocalCacheData
         if let bodyData {
             request.httpBody = bodyData

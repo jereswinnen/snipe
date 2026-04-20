@@ -123,19 +123,3 @@ struct ShopFaviconStack: View {
         }
     }
 }
-
-enum ShopFavicon {
-    static func url(for shop: String) -> URL? {
-        let domain: String
-        switch shop {
-        case "bol": domain = "bol.com"
-        case "coolblue": domain = "coolblue.be"
-        case "allyourgames": domain = "allyourgames.nl"
-        case "nedgame": domain = "nedgame.nl"
-        case "nintendo": domain = "nintendo.com"
-        case "dreamland": domain = "dreamland.be"
-        default: domain = "\(shop).com"
-        }
-        return URL(string: "https://www.google.com/s2/favicons?domain=\(domain)&sz=64")
-    }
-}

@@ -3,6 +3,7 @@ import SwiftUI
 struct GroupsListView: View {
     @Environment(Session.self) private var session
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.device) private var device
     @Binding var deepLinkGroupId: Int?
 
     @State private var groups: [GroupSummary] = []
@@ -82,10 +83,9 @@ struct GroupsListView: View {
                 )
             } else {
                 ScrollView {
-                    LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 170), spacing: 8)],
-                        spacing: 8
-                    ) {
+                    let columns = GridLayouts.gridItems(for: device.sizeClassX)
+                    let spacing = GridLayouts.spacing(for: device.sizeClassX)
+                    LazyVGrid(columns: columns, spacing: spacing) {
                         ForEach(groups) { summary in
                             NavigationLink(value: summary.group.id) {
                                 GroupCardView(summary: summary)
@@ -93,7 +93,7 @@ struct GroupsListView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, spacing)
                     .padding(.bottom, 24)
                 }
             }
