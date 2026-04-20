@@ -75,10 +75,15 @@ struct GroupDetailView: View {
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
-        // Refreshable belongs on the scrolling content, not the outer view.
-        // Otherwise concurrent task work can cancel the request mid-flight
-        // (NSURLErrorCancelled / -999).
-        .refreshable { await load() }
+        // SwiftUI cancels the .refreshable Task when the gesture ends,
+        // often before the network call finishes (NSURLErrorCancelled).
+        // Detach so the load survives the gesture; we still await so the
+        // spinner stays visible until the real refresh completes.
+        .refreshable {
+            await Task.detached { @MainActor in
+                await load()
+            }.value
+        }
     }
 
     private func hero(group: ProductGroup, cheapest: Listing) -> some View {

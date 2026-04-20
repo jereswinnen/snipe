@@ -91,10 +91,17 @@ struct GroupsListView: View {
                 .padding(.horizontal, spacing)
                 .padding(.bottom, 24)
             }
-            // Attach refreshable directly to the scrolling content. Placing
-            // it on the NavigationStack lets concurrent `.task` work cancel
-            // the refresh request mid-flight (NSURLErrorCancelled / -999).
-            .refreshable { await load() }
+            // SwiftUI cancels the .refreshable Task as soon as the
+            // pull-to-refresh gesture ends, often before the network call
+            // finishes — surfacing as NSURLErrorCancelled (-999). Detach
+            // the work so it survives the gesture and the grid actually
+            // refreshes; we still await so the spinner stays up for the
+            // real duration.
+            .refreshable {
+                await Task.detached { @MainActor in
+                    await load()
+                }.value
+            }
         }
     }
 
