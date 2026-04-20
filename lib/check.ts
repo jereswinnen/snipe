@@ -5,6 +5,7 @@ import { fetchPage } from "@/lib/scrapers/fetch";
 import {
   buildNotification,
   buildSaleEndingNotification,
+  buildScrapeFailureNotification,
   sendNotification,
 } from "@/lib/notify";
 import {
@@ -108,6 +109,31 @@ export async function checkProduct(product: Product): Promise<CheckOutcome> {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     await updateProduct(product.id, { lastCheckedAt: new Date(), lastError: msg });
+
+    // Notify only on the healthy → failing transition. While the error
+    // persists we stay silent; once a subsequent check succeeds, the
+    // lastError clears and the next failure will fire again.
+    if (!product.lastError) {
+      try {
+        const group = product.groupId
+          ? await getProductGroup(product.groupId)
+          : null;
+        const openUrl = product.groupId
+          ? `${env.APP_URL}/groups/${product.groupId}`
+          : product.url;
+        await sendNotification(
+          buildScrapeFailureNotification({
+            name: group?.title ?? product.name,
+            shop: product.shop,
+            error: msg,
+            openUrl,
+            imageUrl: product.imageUrl ?? undefined,
+          }),
+        );
+      } catch (err) {
+        console.error("scrape-failure notify failed:", (err as Error).message);
+      }
+    }
     return { ok: false, error: msg };
   }
 }

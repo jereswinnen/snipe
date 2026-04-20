@@ -27,6 +27,27 @@ export function buildNotification(input: {
 
 const hoursFmt = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
+export function buildScrapeFailureNotification(input: {
+  name: string;
+  shop: string;
+  error: string;
+  openUrl: string;
+  imageUrl?: string;
+}): NotificationPayload {
+  // Trim the error so the push body stays short. Keep the first line,
+  // strip any trailing diagnostic parens, clamp to ~120 chars.
+  const firstLine = input.error.split("\n")[0].trim();
+  const cleaned = firstLine.replace(/\s*\([^)]*\)\s*$/, "").slice(0, 120);
+  return {
+    title: `Scrape failed · ${input.shop}`,
+    message: `${input.name} — ${cleaned}`,
+    open_url: input.openUrl,
+    sound: "warm_soft_error",
+    image_url: input.imageUrl,
+    interruption_level: "passive",
+  };
+}
+
 export function buildSaleEndingNotification(input: {
   name: string;
   url: string;
