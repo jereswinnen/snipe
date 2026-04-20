@@ -78,20 +78,32 @@ export async function fetchPage(url: string, attempts = 3): Promise<string> {
   let lastErr: unknown;
   for (let i = 0; i < attempts; i++) {
     const browser = BROWSERS[i % BROWSERS.length];
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15_000);
+    let res: Response;
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15_000);
-      const res = await fetch(target, {
+      res = await fetch(target, {
         headers: buildHeaders(browser, target),
         signal: controller.signal,
       });
-      clearTimeout(timer);
-      if (!res.ok) throw new Error(`HTTP ${res.status} for ${target}`);
-      return await res.text();
     } catch (e) {
+      clearTimeout(timer);
       lastErr = e;
       if (i < attempts - 1) await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+      continue;
     }
+    clearTimeout(timer);
+    if (res.ok) return await res.text();
+    // 4xx is deterministic within a short window: a bot gate, 404, 410,
+    // or 429 won't flip its verdict if we retry from the same IP 1–2 s
+    // later. On Akamai-backed hosts (bol.com) it's worse — the retries
+    // keep the cooldown counter alive and block subsequent products too.
+    // Fail fast; the cron's inter-request delay handles any real recovery.
+    if (res.status >= 400 && res.status < 500) {
+      throw new Error(`HTTP ${res.status} for ${target}`);
+    }
+    lastErr = new Error(`HTTP ${res.status} for ${target}`);
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
   }
   throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }
