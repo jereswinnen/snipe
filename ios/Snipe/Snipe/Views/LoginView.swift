@@ -53,6 +53,8 @@ struct LoginView: View {
             Spacer()
         }
         .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.snipeBackground)
     }
 
     private func submit() {

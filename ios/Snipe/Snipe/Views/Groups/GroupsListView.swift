@@ -16,6 +16,8 @@ struct GroupsListView: View {
     var body: some View {
         NavigationStack(path: $path) {
             content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.snipeBackground)
                 .navigationTitle("Snipe")
                 .toolbar { toolbar }
                 .navigationDestination(for: Int.self) { groupId in

@@ -37,7 +37,7 @@ struct GroupCardView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity)
-        .background(.background, in: .rect(cornerRadius: 24))
+        .background(Color.snipeCard, in: .rect(cornerRadius: 24))
         .overlay(alignment: .topLeading) {
             if targetMet {
                 RoundedRectangle(cornerRadius: 24)
@@ -116,7 +116,7 @@ struct ShopFaviconStack: View {
                 .clipShape(RoundedRectangle(cornerRadius: 3))
                 .overlay(
                     RoundedRectangle(cornerRadius: 3)
-                        .strokeBorder(Color(.systemBackground), lineWidth: 1.5)
+                        .strokeBorder(Color.snipeCard, lineWidth: 1.5)
                 )
                 .zIndex(Double(shops.count - index))
             }

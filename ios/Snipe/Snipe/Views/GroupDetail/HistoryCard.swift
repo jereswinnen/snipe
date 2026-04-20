@@ -55,7 +55,7 @@ struct HistoryCard: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: .rect(cornerRadius: 24))
+        .background(Color.snipeCard, in: .rect(cornerRadius: 24))
         .task(id: listings.map(\.id)) { await load() }
     }
 

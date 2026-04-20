@@ -30,6 +30,8 @@ struct GroupDetailView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.snipeBackground)
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
         .refreshable { await load() }
@@ -126,7 +128,7 @@ struct GroupDetailView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity)
-        .background(.background, in: .rect(cornerRadius: 28))
+        .background(Color.snipeCard, in: .rect(cornerRadius: 28))
     }
 
     private func trendCard(trend: GroupTrend) -> some View {
@@ -147,7 +149,7 @@ struct GroupDetailView: View {
             TrendChartView(trend: trend)
         }
         .padding(20)
-        .background(.background, in: .rect(cornerRadius: 24))
+        .background(Color.snipeCard, in: .rect(cornerRadius: 24))
     }
 
     private func storesCard(listings: [Listing]) -> some View {
@@ -177,7 +179,7 @@ struct GroupDetailView: View {
             }
         }
         .padding(20)
-        .background(.background, in: .rect(cornerRadius: 24))
+        .background(Color.snipeCard, in: .rect(cornerRadius: 24))
     }
 
     private func targetPriceCard(group: ProductGroup, cheapest: Listing) -> some View {
