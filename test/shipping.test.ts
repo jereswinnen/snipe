@@ -36,3 +36,13 @@ test("nintendo digital is always free", () => {
   assert.equal(shippingCost("nintendo", 1, {}), 0);
   assert.equal(shippingCost("nintendo", 59.99, {}), 0);
 });
+
+test("dreamland under 50 is 4.99", () => {
+  assert.equal(shippingCost("dreamland", 20, {}), 4.99);
+  assert.equal(shippingCost("dreamland", 49.99, {}), 4.99);
+});
+
+test("dreamland at or above 50 is free", () => {
+  assert.equal(shippingCost("dreamland", 50, {}), 0);
+  assert.equal(shippingCost("dreamland", 200, {}), 0);
+});

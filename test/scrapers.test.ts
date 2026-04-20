@@ -5,6 +5,7 @@ import { bol } from "../lib/scrapers/bol.ts";
 import { coolblue } from "../lib/scrapers/coolblue.ts";
 import { allYourGames } from "../lib/scrapers/allyourgames.ts";
 import { nedgame } from "../lib/scrapers/nedgame.ts";
+import { dreamland } from "../lib/scrapers/dreamland.ts";
 import { shopFromUrl, getConnector } from "../lib/scrapers/index.ts";
 
 test("bol connector extracts name + price from fixture", async () => {
@@ -36,6 +37,17 @@ test("nedgame connector extracts name + price from fixture", async () => {
   assert.ok(r.price > 0);
 });
 
+test("dreamland connector extracts name + price from fixture", async () => {
+  const html = readFileSync("test/fixtures/dreamland.html", "utf8");
+  const r = await dreamland.scrape(
+    html,
+    "https://www.dreamland.be/nl/producten/ps5-pragmata/02347813",
+  );
+  assert.ok(r.name.length > 0);
+  assert.ok(r.price > 0);
+  assert.ok(r.imageUrl && r.imageUrl.length > 0);
+});
+
 test("shopFromUrl detects hostnames", () => {
   assert.equal(shopFromUrl("https://www.bol.com/nl/nl/p/x/123/"), "bol");
   assert.equal(shopFromUrl("https://bol.com/p/x"), "bol");
@@ -46,6 +58,10 @@ test("shopFromUrl detects hostnames", () => {
   assert.equal(
     shopFromUrl("https://www.nintendo.com/nl-be/Games/x-123.html"),
     "nintendo",
+  );
+  assert.equal(
+    shopFromUrl("https://www.dreamland.be/nl/producten/x/12345"),
+    "dreamland",
   );
   assert.equal(shopFromUrl("https://example.com/"), null);
 });

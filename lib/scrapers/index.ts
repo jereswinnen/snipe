@@ -5,8 +5,16 @@ import { coolblue } from "./coolblue";
 import { allYourGames } from "./allyourgames";
 import { nedgame } from "./nedgame";
 import { nintendo } from "./nintendo";
+import { dreamland } from "./dreamland";
 
-const connectors: ShopConnector[] = [bol, coolblue, allYourGames, nedgame, nintendo];
+const connectors: ShopConnector[] = [
+  bol,
+  coolblue,
+  allYourGames,
+  nedgame,
+  nintendo,
+  dreamland,
+];
 const byShop = new Map<Shop, ShopConnector>(connectors.map((c) => [c.shop, c]));
 
 export function getConnector(shop: Shop): ShopConnector {
