@@ -13,7 +13,7 @@ export type CheckOutcome =
 export async function checkProduct(product: Product): Promise<CheckOutcome> {
   try {
     const html = await fetchPage(product.url);
-    const result = getConnector(product.shop).scrape(html, product.url);
+    const result = await getConnector(product.shop).scrape(html, product.url);
     const shipping = shippingCost(
       product.shop,
       result.price,

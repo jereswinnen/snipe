@@ -29,10 +29,11 @@ export async function POST(req: Request) {
   const existing = await findProductByUrl(url);
   if (existing) return NextResponse.json({ error: "duplicate", id: existing.id }, { status: 409 });
 
+  const connector = getConnector(shop);
   let scrape;
   try {
     const html = await fetchPage(url);
-    scrape = getConnector(shop).scrape(html, url);
+    scrape = await connector.scrape(html, url);
   } catch (e) {
     return NextResponse.json(
       { error: "scrape_failed", detail: (e as Error).message },
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
   const inserted = await insertProduct({
     url,
     shop,
+    medium: connector.medium,
     name: scrape.name,
     imageUrl: scrape.imageUrl,
     isPreOrder: isPreOrder ?? false,

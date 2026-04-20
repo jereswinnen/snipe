@@ -4,8 +4,9 @@ import { bol } from "./bol";
 import { coolblue } from "./coolblue";
 import { allYourGames } from "./allyourgames";
 import { nedgame } from "./nedgame";
+import { nintendo } from "./nintendo";
 
-const connectors: ShopConnector[] = [bol, coolblue, allYourGames, nedgame];
+const connectors: ShopConnector[] = [bol, coolblue, allYourGames, nedgame, nintendo];
 const byShop = new Map<Shop, ShopConnector>(connectors.map((c) => [c.shop, c]));
 
 export function getConnector(shop: Shop): ShopConnector {
@@ -29,4 +30,4 @@ export function shopFromUrl(url: string): Shop | null {
   return null;
 }
 
-export type { ShopConnector, ScrapeResult, ShippingFlags, ShippingEnv } from "./types";
+export type { ShopConnector, ScrapeResult, ShippingFlags, ShippingEnv, Medium } from "./types";

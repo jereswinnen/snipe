@@ -8,6 +8,13 @@
       "when": 1776600340783,
       "tag": "0000_supreme_lester",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776667821304,
+      "tag": "0001_clear_satana",
+      "breakpoints": true
     }
   ]
 }

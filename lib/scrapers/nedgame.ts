@@ -15,8 +15,9 @@ function parseMoney(text: string | undefined): number | undefined {
 export const nedgame: ShopConnector = {
   shop: "nedgame",
   hosts: ["nedgame.nl"],
+  medium: "physical",
 
-  scrape(html, url): ScrapeResult {
+  async scrape(html, url): Promise<ScrapeResult> {
     const ld = extractProductJsonLd(html, url);
     if (ld?.name && ld.price != null) {
       return { name: ld.name, price: ld.price, imageUrl: ld.image };

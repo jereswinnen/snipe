@@ -4,8 +4,9 @@ import type { ShopConnector, ScrapeResult } from "./types";
 export const bol: ShopConnector = {
   shop: "bol",
   hosts: ["bol.com"],
+  medium: "physical",
 
-  scrape(html: string, url: string): ScrapeResult {
+  async scrape(html: string, url: string): Promise<ScrapeResult> {
     const ld = extractProductJsonLd(html, url);
     if (!ld || ld.price == null || !ld.name) {
       const ldCount = (html.match(/application\/ld\+json/g) ?? []).length;

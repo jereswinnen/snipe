@@ -4,8 +4,9 @@ import type { ShopConnector, ScrapeResult } from "./types";
 export const coolblue: ShopConnector = {
   shop: "coolblue",
   hosts: ["coolblue.be", "coolblue.nl"],
+  medium: "physical",
 
-  scrape(html, url): ScrapeResult {
+  async scrape(html, url): Promise<ScrapeResult> {
     const ld = extractProductJsonLd(html, url);
     if (!ld || ld.price == null || !ld.name) {
       throw new Error("coolblue: JSON-LD Product not found");

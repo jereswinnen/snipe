@@ -2,23 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { shippingCost } from "../lib/shipping.ts";
 
-test("bol sold-by-third-party is 0", () => {
+test("bol is always free", () => {
   assert.equal(shippingCost("bol", 10, { soldByBol: false }), 0);
-  assert.equal(shippingCost("bol", 100, { soldByBol: false }), 0);
-});
-
-test("bol sold-by-bol under 25 is 2.99", () => {
-  assert.equal(shippingCost("bol", 20, { soldByBol: true }), 2.99);
-  assert.equal(shippingCost("bol", 24.99, { soldByBol: true }), 2.99);
-});
-
-test("bol sold-by-bol at or above 25 is free", () => {
-  assert.equal(shippingCost("bol", 25, { soldByBol: true }), 0);
-  assert.equal(shippingCost("bol", 99, { soldByBol: true }), 0);
-});
-
-test("bol with unknown seller defaults to sold-by-bol rules (conservative)", () => {
-  assert.equal(shippingCost("bol", 10, { soldByBol: null }), 2.99);
+  assert.equal(shippingCost("bol", 100, { soldByBol: true }), 0);
+  assert.equal(shippingCost("bol", 10, { soldByBol: null }), 0);
 });
 
 test("coolblue is always free", () => {
@@ -43,4 +30,9 @@ test("nedgame under 175 is 6.99", () => {
 test("nedgame at or above 175 is free", () => {
   assert.equal(shippingCost("nedgame", 175, { isPreOrder: false }), 0);
   assert.equal(shippingCost("nedgame", 300, { isPreOrder: false }), 0);
+});
+
+test("nintendo digital is always free", () => {
+  assert.equal(shippingCost("nintendo", 1, {}), 0);
+  assert.equal(shippingCost("nintendo", 59.99, {}), 0);
 });

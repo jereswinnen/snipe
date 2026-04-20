@@ -2,13 +2,17 @@ import {
   pgTable, serial, text, boolean, numeric, timestamp, integer, index,
 } from "drizzle-orm/pg-core";
 
-export const shops = ["bol", "coolblue", "allyourgames", "nedgame"] as const;
+export const shops = ["bol", "coolblue", "allyourgames", "nedgame", "nintendo"] as const;
 export type Shop = (typeof shops)[number];
+
+export const mediums = ["digital", "physical"] as const;
+export type Medium = (typeof mediums)[number];
 
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
   url: text("url").notNull().unique(),
   shop: text("shop").$type<Shop>().notNull(),
+  medium: text("medium").$type<Medium>().notNull().default("physical"),
   name: text("name").notNull(),
   imageUrl: text("image_url"),
   isPreOrder: boolean("is_pre_order").notNull().default(false),

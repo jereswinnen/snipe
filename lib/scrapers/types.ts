@@ -1,5 +1,7 @@
 import type { Shop } from "@/lib/db/schema";
 
+export type Medium = "digital" | "physical";
+
 export type ScrapeResult = {
   name: string;
   price: number;            // EUR
@@ -19,6 +21,7 @@ export type ShippingEnv = {
 export type ShopConnector = {
   shop: Shop;
   hosts: string[];          // hostnames this connector matches (suffix match)
-  scrape: (html: string, url: string) => ScrapeResult;
+  medium: Medium;           // what this shop sells — digital or physical goods
+  scrape: (html: string, url: string) => Promise<ScrapeResult>;
   shipping: (price: number, flags: ShippingFlags, env: ShippingEnv) => number;
 };

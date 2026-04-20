@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Truck, ExternalLink } from "lucide-react";
+import { Truck, Download, ExternalLink } from "lucide-react";
 import { getProduct, getHistory } from "@/lib/db/queries";
 import { money, relativeTime, formatDateTime } from "@/lib/format";
 import { Sparkline } from "@/components/Sparkline";
@@ -65,7 +65,11 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
           <div className="flex flex-col items-center gap-1 pt-2">
             <div className="text-4xl font-semibold flex items-center gap-2">
-              <Truck size={22} aria-hidden="true" className="text-muted" />
+              {product.medium === "digital" ? (
+                <Download size={22} aria-hidden="true" className="text-muted" />
+              ) : (
+                <Truck size={22} aria-hidden="true" className="text-muted" />
+              )}
               {money(product.lastTotalCost)}
             </div>
             {previous != null && previous !== current && (

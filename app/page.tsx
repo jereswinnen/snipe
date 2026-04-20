@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Truck } from "lucide-react";
+import { Truck, Download } from "lucide-react";
 import { desc, asc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db/client";
 import { money, relativeTime } from "@/lib/format";
@@ -79,7 +79,11 @@ export default async function Home() {
 
                 <div className="flex flex-col items-center gap-1">
                   <div className="text-lg font-semibold flex items-center gap-1">
-                    <Truck size={14} aria-hidden="true" className="text-muted" />
+                    {product.medium === "digital" ? (
+                      <Download size={14} aria-hidden="true" className="text-muted" />
+                    ) : (
+                      <Truck size={14} aria-hidden="true" className="text-muted" />
+                    )}
                     {money(product.lastTotalCost)}
                   </div>
                   {previous != null && previous !== current && (
