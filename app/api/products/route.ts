@@ -8,7 +8,6 @@ import {
   findProductByUrl,
   insertProduct,
   insertProductGroup,
-  listProducts,
   insertHistory,
   getProductGroup,
 } from "@/lib/db/queries";
@@ -18,11 +17,6 @@ const body = z.object({
   groupId: z.number().int().positive().optional(),
   targetPrice: z.number().positive().optional(), // only honoured when creating a new group
 });
-
-export async function GET() {
-  const rows = await listProducts();
-  return NextResponse.json({ products: rows });
-}
 
 export async function POST(req: Request) {
   const parsed = body.safeParse(await req.json().catch(() => null));

@@ -5,7 +5,8 @@ import type { Product, ProductGroup } from "./schema";
 // --- listings (legacy name: products) ---------------------------------------
 
 export async function listProducts() {
-  return db.select().from(schema.products).orderBy(desc(schema.products.updatedAt));
+  // Caller (cron) shuffles; no point ordering here.
+  return db.select().from(schema.products);
 }
 
 export async function getProduct(id: number) {
