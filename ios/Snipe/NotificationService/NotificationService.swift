@@ -24,30 +24,17 @@ final class NotificationService: UNNotificationServiceExtension {
             ?? UNMutableNotificationContent()
         self.bestAttempt = content
 
-        // Visual canary: if NSE actually runs, the banner title will be
-        // prefixed with this. If you see the unprefixed title, the system
-        // never invoked the extension at all.
-        content.title = "✅NSE " + content.title
-
-        NSLog("[NSE] didReceive userInfo=%@", request.content.userInfo as NSDictionary)
-
         guard
             let urlString = request.content.userInfo["image_url"] as? String,
             let url = URL(string: urlString)
         else {
-            NSLog("[NSE] no image_url — delivering text-only")
             contentHandler(content)
             return
         }
 
-        NSLog("[NSE] downloading %@", url.absoluteString)
-
         downloadTask = Task { [weak self] in
             if let attachment = await Self.downloadAttachment(from: url) {
-                NSLog("[NSE] attached image")
                 content.attachments = [attachment]
-            } else {
-                NSLog("[NSE] download/attach failed — delivering text-only")
             }
             self?.deliver()
         }
