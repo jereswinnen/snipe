@@ -43,7 +43,7 @@ struct ProductGroup: nonisolated Codable, Identifiable, Hashable, Sendable {
     let updatedAt: String
 
     var targetPriceDecimal: Decimal? { targetPrice.flatMap { Decimal(string: $0) } }
-    var imageURL: URL? { imageUrl.flatMap { URL(string: $0) } }
+    var imageURL: URL? { imageUrl.flatMap { SnipeURL.from($0) } }
 }
 
 /// One URL tracked on one shop. Belongs to a group.
@@ -66,8 +66,8 @@ struct Listing: nonisolated Codable, Identifiable, Hashable, Sendable {
     let createdAt: String
     let updatedAt: String
 
-    var storeURL: URL? { URL(string: url) }
-    var imageURL: URL? { imageUrl.flatMap { URL(string: $0) } }
+    var storeURL: URL? { SnipeURL.from(url) }
+    var imageURL: URL? { imageUrl.flatMap { SnipeURL.from($0) } }
     var mediumValue: Medium? { Medium(rawValue: medium) }
     var shopValue: Shop? { Shop.parse(shop) }
 
@@ -163,6 +163,26 @@ struct Device: nonisolated Codable, Identifiable, Sendable {
     let environment: String
     let createdAt: String
     let lastSeenAt: String
+}
+
+// MARK: - URL parsing
+
+/// Some shop pages emit meta tags with leading/trailing whitespace inside
+/// the attribute value. URL(string:) rejects those. Trimming first, then
+/// URL-encoding any remaining illegal characters gives us a best-effort
+/// parse without hiding real bugs.
+nonisolated enum SnipeURL {
+    static func from(_ raw: String) -> URL? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if let url = URL(string: trimmed) { return url }
+        if let encoded = trimmed.addingPercentEncoding(
+            withAllowedCharacters: .urlQueryAllowed
+        ) {
+            return URL(string: encoded)
+        }
+        return nil
+    }
 }
 
 // MARK: - Date parsing

@@ -43,7 +43,10 @@ export const nintendo: ShopConnector = {
     const name =
       $('meta[property="og:title"]').attr("content")?.trim() ||
       $("h1").first().text().trim();
-    const imageUrl = $('meta[property="og:image"]').attr("content") || undefined;
+    // Nintendo's Belgian localisations wrap the content attribute with
+    // leading whitespace/newlines, which makes URL parsers (Swift's
+    // URL(string:) in particular) reject the value. Trim aggressively.
+    const imageUrl = $('meta[property="og:image"]').attr("content")?.trim() || undefined;
     if (!name) throw new Error("nintendo: title not found");
 
     const { country, lang } = localeFromUrl(url);
