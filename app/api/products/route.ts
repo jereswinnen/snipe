@@ -4,10 +4,18 @@ import { env } from "@/lib/env";
 import { shopFromUrl, getConnector } from "@/lib/scrapers";
 import { fetchPage, canonicalizeUrl } from "@/lib/scrapers/fetch";
 import { shippingCost } from "@/lib/shipping";
-import { findProductByUrl, insertProduct, listProducts, insertHistory } from "@/lib/db/queries";
+import {
+  findProductByUrl,
+  insertProduct,
+  insertProductGroup,
+  listProducts,
+  insertHistory,
+  getProductGroup,
+} from "@/lib/db/queries";
 
 const body = z.object({
   url: z.string().url(),
+  groupId: z.number().int().positive().optional(),
   targetPrice: z.number().positive().optional(),
   isPreOrder: z.boolean().optional(),
 });
@@ -20,14 +28,23 @@ export async function GET() {
 export async function POST(req: Request) {
   const parsed = body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad_request" }, { status: 400 });
-  const { targetPrice, isPreOrder } = parsed.data;
+  const { targetPrice, isPreOrder, groupId } = parsed.data;
   const url = canonicalizeUrl(parsed.data.url);
 
   const shop = shopFromUrl(url);
   if (!shop) return NextResponse.json({ error: "unsupported_shop" }, { status: 400 });
 
   const existing = await findProductByUrl(url);
-  if (existing) return NextResponse.json({ error: "duplicate", id: existing.id }, { status: 409 });
+  if (existing)
+    return NextResponse.json(
+      { error: "duplicate", id: existing.id, groupId: existing.groupId },
+      { status: 409 },
+    );
+
+  if (groupId != null) {
+    const g = await getProductGroup(groupId);
+    if (!g) return NextResponse.json({ error: "group_not_found" }, { status: 404 });
+  }
 
   const connector = getConnector(shop);
   let scrape;
@@ -50,7 +67,17 @@ export async function POST(req: Request) {
   const totalCost = Number((scrape.price + shipping).toFixed(2));
   const price = Number(scrape.price.toFixed(2));
 
+  const group =
+    groupId != null
+      ? await getProductGroup(groupId)
+      : await insertProductGroup({
+          title: scrape.name,
+          imageUrl: scrape.imageUrl,
+          targetPrice: targetPrice !== undefined ? targetPrice.toFixed(2) : null,
+        });
+
   const inserted = await insertProduct({
+    groupId: group!.id,
     url,
     shop,
     medium: connector.medium,
@@ -63,7 +90,7 @@ export async function POST(req: Request) {
     lastRegularPrice:
       scrape.regularPrice != null ? scrape.regularPrice.toFixed(2) : null,
     lastSaleEndsAt: scrape.saleEndsAt ?? null,
-    targetPrice: targetPrice !== undefined ? targetPrice.toFixed(2) : null,
+    targetPrice: null,
     lastCheckedAt: new Date(),
   });
   await insertHistory({
@@ -72,5 +99,5 @@ export async function POST(req: Request) {
     totalCost: totalCost.toFixed(2),
   });
 
-  return NextResponse.json({ product: inserted });
+  return NextResponse.json({ product: inserted, group });
 }
