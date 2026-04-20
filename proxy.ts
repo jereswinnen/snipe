@@ -13,8 +13,16 @@ export function proxy(request: NextRequest) {
   }
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   if (verifySession(env.APP_SECRET, token)) return NextResponse.next();
+
   if (pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  // RSC prefetches can't parse an HTML redirect as an RSC payload — the
+  // browser logs "Failed to fetch RSC payload". Return 401 so Next treats
+  // the prefetch as a miss and the user still gets redirected by the
+  // subsequent full navigation.
+  if (request.headers.get("RSC") === "1") {
+    return new NextResponse(null, { status: 401 });
   }
   const url = request.nextUrl.clone();
   url.pathname = "/login";
@@ -22,5 +30,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Skip Next internals, HMR, and any path with a file extension (assets).
+  matcher: ["/((?!_next/|favicon\\.ico|.*\\.[^/]+$).*)"],
 };
