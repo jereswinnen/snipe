@@ -1,4 +1,4 @@
-import { respondError, respondJson } from "@/lib/api/errors";
+import { parseRouteId, respondError, respondJson } from "@/lib/api/errors";
 import { getListingHistory, getProduct } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
@@ -7,8 +7,8 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: Request, { params }: Ctx) {
   const { id: rawId } = await params;
-  const id = Number(rawId);
-  if (!Number.isFinite(id)) return respondError("bad_id", 400, "Invalid id");
+  const id = parseRouteId(rawId);
+  if (id === null) return respondError("bad_id", 400, "Invalid id");
   const listing = await getProduct(id);
   if (!listing) return respondError("not_found", 404, "Listing not found");
 

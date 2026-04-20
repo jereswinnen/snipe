@@ -46,3 +46,14 @@ export function respondError(
 export function respondJson<T>(body: T, status = 200): NextResponse {
   return NextResponse.json(body, { status, headers: NO_STORE_HEADERS });
 }
+
+/** Postgres `serial` is int4 — 1 .. 2,147,483,647. Anything outside that
+ *  range can't possibly match a real row and would otherwise blow up the
+ *  query with `value out of range for type integer` (SQLSTATE 22003).
+ *  Returns null for invalid input so callers can 400 cleanly. */
+const PG_INT4_MAX = 2_147_483_647;
+export function parseRouteId(raw: string): number | null {
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1 || n > PG_INT4_MAX) return null;
+  return n;
+}

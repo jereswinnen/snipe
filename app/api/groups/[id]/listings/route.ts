@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { env } from "@/lib/env";
-import { respondError, respondJson } from "@/lib/api/errors";
+import { parseRouteId, respondError, respondJson } from "@/lib/api/errors";
 import { shopFromUrl, getConnector } from "@/lib/scrapers";
 import { fetchPage, canonicalizeUrl } from "@/lib/scrapers/fetch";
 import { shippingCost } from "@/lib/shipping";
@@ -17,8 +17,8 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, { params }: Ctx) {
   const { id: rawId } = await params;
-  const groupId = Number(rawId);
-  if (!Number.isFinite(groupId))
+  const groupId = parseRouteId(rawId);
+  if (groupId === null)
     return respondError("bad_id", 400, "Invalid group id");
 
   const parsed = body.safeParse(await req.json().catch(() => null));

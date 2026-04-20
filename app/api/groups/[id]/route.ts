@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { respondError, respondJson } from "@/lib/api/errors";
+import { parseRouteId, respondError, respondJson } from "@/lib/api/errors";
 import {
   getProductGroup,
   updateProductGroup,
@@ -19,8 +19,8 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Ctx) {
   const { id: rawId } = await params;
-  const id = Number(rawId);
-  if (!Number.isFinite(id)) return respondError("bad_id", 400, "Invalid id");
+  const id = parseRouteId(rawId);
+  if (id === null) return respondError("bad_id", 400, "Invalid id");
   const group = await getProductGroup(id);
   if (!group) return respondError("not_found", 404, "Group not found");
   const listings = await listProductsByGroup(id);
@@ -29,8 +29,8 @@ export async function GET(_req: Request, { params }: Ctx) {
 
 export async function PATCH(req: Request, { params }: Ctx) {
   const { id: rawId } = await params;
-  const id = Number(rawId);
-  if (!Number.isFinite(id)) return respondError("bad_id", 400, "Invalid id");
+  const id = parseRouteId(rawId);
+  if (id === null) return respondError("bad_id", 400, "Invalid id");
   const parsed = patch.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return respondError("bad_request", 400, "Invalid body");
 
@@ -47,8 +47,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
 export async function DELETE(_req: Request, { params }: Ctx) {
   const { id: rawId } = await params;
-  const id = Number(rawId);
-  if (!Number.isFinite(id)) return respondError("bad_id", 400, "Invalid id");
+  const id = parseRouteId(rawId);
+  if (id === null) return respondError("bad_id", 400, "Invalid id");
   await deleteProductGroup(id);
   return respondJson({ ok: true });
 }
