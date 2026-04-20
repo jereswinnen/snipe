@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Truck, Download } from "lucide-react";
 import { desc, asc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db/client";
-import { money, relativeTime } from "@/lib/format";
+import { money, relativeTime, formatShortDate } from "@/lib/format";
 import { Sparkline } from "@/components/Sparkline";
 import HeaderActions from "./HeaderActions";
 
@@ -40,6 +40,11 @@ export default async function Home() {
             const values = history.map((h) => Number(h.totalCost));
             const previous = values.length >= 2 ? values[values.length - 2] : null;
             const current = Number(product.lastTotalCost);
+            const saleEndsAt = product.lastSaleEndsAt;
+            const onSale =
+              saleEndsAt != null &&
+              new Date(saleEndsAt).getTime() > Date.now() &&
+              product.lastRegularPrice != null;
             return (
               <li
                 key={product.id}
@@ -85,9 +90,20 @@ export default async function Home() {
                       <Truck size={14} aria-hidden="true" className="text-muted" />
                     )}
                     {money(product.lastTotalCost)}
+                    {onSale && (
+                      <span className="ml-1 text-muted line-through text-xs font-normal">
+                        {money(product.lastRegularPrice!)}
+                      </span>
+                    )}
                   </div>
-                  {previous != null && previous !== current && (
-                    <div className="text-xs text-muted">was {money(previous)}</div>
+                  {onSale ? (
+                    <div className="text-xs text-emerald-600 font-medium">
+                      sale ends {formatShortDate(saleEndsAt)}
+                    </div>
+                  ) : (
+                    previous != null && previous !== current && (
+                      <div className="text-xs text-muted">was {money(previous)}</div>
+                    )
                   )}
                 </div>
 

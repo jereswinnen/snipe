@@ -60,6 +60,9 @@ export async function POST(req: Request) {
     soldByBol: scrape.soldByBol ?? null,
     lastPrice: price.toFixed(2),
     lastTotalCost: totalCost.toFixed(2),
+    lastRegularPrice:
+      scrape.regularPrice != null ? scrape.regularPrice.toFixed(2) : null,
+    lastSaleEndsAt: scrape.saleEndsAt ?? null,
     targetPrice: targetPrice !== undefined ? targetPrice.toFixed(2) : null,
     lastCheckedAt: new Date(),
   });

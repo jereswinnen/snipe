@@ -4,7 +4,12 @@ import type { ShopConnector, ScrapeResult } from "./types";
 type NintendoPrice = {
   sales_status?: string;
   regular_price?: { raw_value: string; currency: string };
-  discount_price?: { raw_value: string; currency: string };
+  discount_price?: {
+    raw_value: string;
+    currency: string;
+    start_datetime?: string;
+    end_datetime?: string;
+  };
 };
 
 type NintendoPriceResponse = {
@@ -47,7 +52,9 @@ export const nintendo: ShopConnector = {
     if (!res.ok) throw new Error(`nintendo: price API HTTP ${res.status}`);
     const body = (await res.json()) as NintendoPriceResponse;
     const entry = body.prices?.[0];
-    const raw = entry?.discount_price?.raw_value ?? entry?.regular_price?.raw_value;
+    const discount = entry?.discount_price;
+    const regular = entry?.regular_price;
+    const raw = discount?.raw_value ?? regular?.raw_value;
     const price = raw ? Number(raw) : NaN;
     if (!Number.isFinite(price)) {
       throw new Error(
@@ -55,7 +62,15 @@ export const nintendo: ShopConnector = {
       );
     }
 
-    return { name, price, imageUrl };
+    const result: ScrapeResult = { name, price, imageUrl };
+    if (discount && regular) {
+      result.regularPrice = Number(regular.raw_value);
+      if (discount.end_datetime) {
+        const end = new Date(discount.end_datetime);
+        if (!Number.isNaN(end.getTime())) result.saleEndsAt = end;
+      }
+    }
+    return result;
   },
 
   shipping() {

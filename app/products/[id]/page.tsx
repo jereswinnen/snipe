@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Truck, Download, ExternalLink } from "lucide-react";
 import { getProduct, getHistory } from "@/lib/db/queries";
-import { money, relativeTime, formatDateTime } from "@/lib/format";
+import { money, relativeTime, formatDateTime, formatShortDate } from "@/lib/format";
 import { Sparkline } from "@/components/Sparkline";
 import ProductControls from "./ProductControls";
 import ProductHeader from "./ProductHeader";
@@ -21,6 +21,11 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const previous = values.length >= 2 ? values[values.length - 2] : null;
   const low = values.length ? Math.min(...values) : current;
   const high = values.length ? Math.max(...values) : current;
+  const saleEndsAt = product.lastSaleEndsAt;
+  const onSale =
+    saleEndsAt != null &&
+    new Date(saleEndsAt).getTime() > Date.now() &&
+    product.lastRegularPrice != null;
 
   return (
     <main className="min-h-screen bg-bg text-fg">
@@ -71,9 +76,20 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 <Truck size={22} aria-hidden="true" className="text-muted" />
               )}
               {money(product.lastTotalCost)}
+              {onSale && (
+                <span className="text-xl text-muted line-through font-normal">
+                  {money(product.lastRegularPrice!)}
+                </span>
+              )}
             </div>
-            {previous != null && previous !== current && (
-              <div className="text-sm text-muted">was {money(previous)}</div>
+            {onSale ? (
+              <div className="text-sm text-emerald-600 font-medium">
+                sale ends {formatShortDate(saleEndsAt)}
+              </div>
+            ) : (
+              previous != null && previous !== current && (
+                <div className="text-sm text-muted">was {money(previous)}</div>
+              )
             )}
           </div>
         </section>

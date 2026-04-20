@@ -4,9 +4,11 @@ export type Medium = "digital" | "physical";
 
 export type ScrapeResult = {
   name: string;
-  price: number;            // EUR
+  price: number;            // EUR — the effective price (discounted when applicable)
   imageUrl?: string;
   soldByBol?: boolean;      // only set by bol connector
+  regularPrice?: number;    // only set when price reflects an active discount
+  saleEndsAt?: Date;        // when the active discount expires
 };
 
 export type ShippingFlags = {

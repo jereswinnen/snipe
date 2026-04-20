@@ -12,10 +12,22 @@ const dateTimeFmt = new Intl.DateTimeFormat("nl-BE", {
   minute: "2-digit",
 });
 
+const shortDateFmt = new Intl.DateTimeFormat("nl-BE", {
+  timeZone: TZ,
+  month: "short",
+  day: "numeric",
+});
+
 export function formatDateTime(d: Date | string | null | undefined): string {
   if (!d) return "—";
   const when = typeof d === "string" ? new Date(d) : d;
   return dateTimeFmt.format(when);
+}
+
+export function formatShortDate(d: Date | string | null | undefined): string {
+  if (!d) return "—";
+  const when = typeof d === "string" ? new Date(d) : d;
+  return shortDateFmt.format(when);
 }
 
 export function relativeTime(d: Date | string | null | undefined): string {

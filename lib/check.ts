@@ -37,6 +37,9 @@ export async function checkProduct(product: Product): Promise<CheckOutcome> {
     const patch: Record<string, unknown> = {
       lastCheckedAt: new Date(),
       lastError: null,
+      lastRegularPrice:
+        result.regularPrice != null ? result.regularPrice.toFixed(2) : null,
+      lastSaleEndsAt: result.saleEndsAt ?? null,
     };
     if (result.soldByBol !== undefined && result.soldByBol !== product.soldByBol) {
       patch.soldByBol = result.soldByBol;

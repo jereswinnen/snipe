@@ -15,6 +15,13 @@
       "when": 1776667821304,
       "tag": "0001_clear_satana",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776670119567,
+      "tag": "0002_long_maginty",
+      "breakpoints": true
     }
   ]
 }
