@@ -1,53 +1,44 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, ClipboardPaste, LogOut, X } from "lucide-react";
+import { Plus, ClipboardPaste, LogOut } from "lucide-react";
+import UrlPrompt, { productErrorMessage } from "@/components/UrlPrompt";
 
 export default function HeaderActions() {
   const [open, setOpen] = useState(false);
-  const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [clipboardErr, setClipboardErr] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    if (!open) return;
-    inputRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
-
-  async function addUrl(value: string) {
-    if (!value) return;
-    setBusy(true);
-    setErr(null);
+  async function addUrl(value: string): Promise<string | null> {
     const res = await fetch("/api/products", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ url: value }),
     });
-    setBusy(false);
     if (res.ok) {
-      setUrl("");
-      setOpen(false);
       router.refresh();
-    } else {
-      const j = await res.json().catch(() => ({}));
-      setErr(j.error === "unsupported_shop" ? "Unsupported shop" : j.detail || "Failed");
+      return null;
     }
+    const body = await res.json().catch(() => ({}));
+    return productErrorMessage(body);
+  }
+
+  function flashError(message: string) {
+    setClipboardErr(message);
+    setTimeout(() => setClipboardErr(null), 2500);
   }
 
   async function pasteAndAdd() {
     try {
       const text = (await navigator.clipboard.readText()).trim();
       if (!text) return;
-      await addUrl(text);
+      setBusy(true);
+      const err = await addUrl(text);
+      setBusy(false);
+      if (err) flashError(err);
     } catch {
-      setErr("Clipboard blocked");
+      flashError("Clipboard blocked");
     }
   }
 
@@ -67,47 +58,16 @@ export default function HeaderActions() {
         </form>
       </div>
 
-      <div
-        aria-hidden={!open}
-        onClick={() => setOpen(false)}
-        className={
-          "fixed inset-0 z-50 flex items-start justify-center bg-white/40 backdrop-blur-xl px-8 pt-[20vh] transition-opacity duration-200 ease-out " +
-          (open ? "opacity-100" : "opacity-0 pointer-events-none")
-        }
-      >
-        <form
-          onClick={(e) => e.stopPropagation()}
-          onSubmit={(e) => {
-            e.preventDefault();
-            addUrl(url.trim());
-          }}
-          className="w-full"
+      <UrlPrompt open={open} onClose={() => setOpen(false)} onSubmit={addUrl} />
+
+      {clipboardErr && (
+        <p
+          role="alert"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-red-500 text-white text-sm px-4 py-2 rounded-full shadow"
         >
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={() => setOpen(false)}
-            className="absolute top-4 right-4 text-fg/70 hover:text-fg"
-          >
-            <X size={22} />
-          </button>
-          <input
-            ref={inputRef}
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Paste product URL…"
-            required
-            disabled={busy}
-            tabIndex={open ? 0 : -1}
-            className="w-full bg-transparent text-4xl md:text-5xl font-light tracking-tight text-fg placeholder:text-fg/30 border-b border-fg/10 focus:border-fg/30 outline-none py-4"
-          />
-          <button type="submit" className="sr-only" tabIndex={open ? 0 : -1}>
-            Add
-          </button>
-          {err && <p className="mt-3 text-sm text-red-500">{err}</p>}
-        </form>
-      </div>
+          {clipboardErr}
+        </p>
+      )}
     </>
   );
 }
