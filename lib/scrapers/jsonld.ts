@@ -178,6 +178,23 @@ function extractFromNode(
   return { name, price, image, sellerName: seller };
 }
 
+/**
+ * Convenience for connectors whose whole scrape is "extract JSON-LD, fail
+ * if name or price is missing". Returns a narrowed type with both fields
+ * guaranteed, so the caller doesn't have to null-check them.
+ */
+export function requireJsonLd(
+  html: string,
+  pageUrl: string,
+  shop: string,
+): JsonLdProduct & { name: string; price: number } {
+  const ld = extractProductJsonLd(html, pageUrl);
+  if (!ld || ld.price == null || !ld.name) {
+    throw new Error(`${shop}: JSON-LD Product not found`);
+  }
+  return { ...ld, name: ld.name, price: ld.price };
+}
+
 export function extractProductJsonLd(
   html: string,
   pageUrl?: string,

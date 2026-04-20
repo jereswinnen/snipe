@@ -1,4 +1,4 @@
-import { extractProductJsonLd } from "./jsonld";
+import { requireJsonLd } from "./jsonld";
 import type { ShopConnector, ScrapeResult } from "./types";
 
 export const allYourGames: ShopConnector = {
@@ -7,10 +7,7 @@ export const allYourGames: ShopConnector = {
   medium: "physical",
 
   async scrape(html, url): Promise<ScrapeResult> {
-    const ld = extractProductJsonLd(html, url);
-    if (!ld || ld.price == null || !ld.name) {
-      throw new Error("allyourgames: JSON-LD Product not found");
-    }
+    const ld = requireJsonLd(html, url, "allyourgames");
     return { name: ld.name, price: ld.price, imageUrl: ld.image };
   },
 
