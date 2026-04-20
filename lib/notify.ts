@@ -44,7 +44,7 @@ export function buildScrapeFailureNotification(input: {
     open_url: input.openUrl,
     sound: "warm_soft_error",
     image_url: input.imageUrl,
-    interruption_level: "passive",
+    interruption_level: "time-sensitive",
   };
 }
 
@@ -62,7 +62,9 @@ export function buildSaleEndingNotification(input: {
     Math.round((input.endsAt.getTime() - Date.now()) / 3_600_000),
   );
   const when =
-    hoursLeft >= 20 ? hoursFmt.format(1, "day") : hoursFmt.format(hoursLeft, "hour");
+    hoursLeft >= 20
+      ? hoursFmt.format(1, "day")
+      : hoursFmt.format(hoursLeft, "hour");
   return {
     title: `Sale ending ${when}`,
     message: `${input.name} — ${fmt(input.salePrice)} (was ${fmt(input.regularPrice)})`,
@@ -73,7 +75,9 @@ export function buildSaleEndingNotification(input: {
   };
 }
 
-export async function sendNotification(payload: NotificationPayload): Promise<void> {
+export async function sendNotification(
+  payload: NotificationPayload,
+): Promise<void> {
   const { env } = await import("@/lib/env");
   const res = await fetch("https://api.brrr.now/v1/send", {
     method: "POST",
@@ -84,6 +88,8 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    throw new Error(`brrr.now ${res.status}: ${await res.text().catch(() => "")}`);
+    throw new Error(
+      `brrr.now ${res.status}: ${await res.text().catch(() => "")}`,
+    );
   }
 }
