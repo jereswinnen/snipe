@@ -31,6 +31,7 @@ export const products = pgTable("products", {
   lastTotalCost: numeric("last_total_cost", { precision: 10, scale: 2 }).notNull(),
   lastRegularPrice: numeric("last_regular_price", { precision: 10, scale: 2 }),
   lastSaleEndsAt: timestamp("last_sale_ends_at", { withTimezone: true }),
+  saleEndNotifiedFor: timestamp("sale_end_notified_for", { withTimezone: true }),
   targetPrice: numeric("target_price", { precision: 10, scale: 2 }),
   lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }),
   lastError: text("last_error"),

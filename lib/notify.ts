@@ -25,6 +25,33 @@ export function buildNotification(input: {
   };
 }
 
+const hoursFmt = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+export function buildSaleEndingNotification(input: {
+  name: string;
+  url: string;
+  endsAt: Date;
+  salePrice: number;
+  regularPrice: number;
+  imageUrl?: string;
+}): NotificationPayload {
+  const fmt = (n: number) => `€${n.toFixed(2)}`;
+  const hoursLeft = Math.max(
+    1,
+    Math.round((input.endsAt.getTime() - Date.now()) / 3_600_000),
+  );
+  const when =
+    hoursLeft >= 20 ? hoursFmt.format(1, "day") : hoursFmt.format(hoursLeft, "hour");
+  return {
+    title: `Sale ending ${when}`,
+    message: `${input.name} — ${fmt(input.salePrice)} (was ${fmt(input.regularPrice)})`,
+    open_url: input.url,
+    sound: "cha_ching",
+    image_url: input.imageUrl,
+    interruption_level: "time-sensitive",
+  };
+}
+
 export async function sendNotification(payload: NotificationPayload): Promise<void> {
   const { env } = await import("@/lib/env");
   const res = await fetch("https://api.brrr.now/v1/send", {

@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "sale_end_notified_for" timestamp with time zone;

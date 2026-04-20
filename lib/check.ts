@@ -2,9 +2,19 @@ import { env } from "@/lib/env";
 import { shippingCost } from "@/lib/shipping";
 import { getConnector } from "@/lib/scrapers";
 import { fetchPage } from "@/lib/scrapers/fetch";
-import { buildNotification, sendNotification } from "@/lib/notify";
-import { insertHistory, updateProduct } from "@/lib/db/queries";
+import {
+  buildNotification,
+  buildSaleEndingNotification,
+  sendNotification,
+} from "@/lib/notify";
+import {
+  getProductGroup,
+  insertHistory,
+  updateProduct,
+} from "@/lib/db/queries";
 import type { Product } from "@/lib/db/schema";
+
+const SALE_ENDING_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export type CheckOutcome =
   | { ok: true; changed: boolean; price: number; totalCost: number }
@@ -65,6 +75,36 @@ export async function checkProduct(product: Product): Promise<CheckOutcome> {
         );
       } catch (e) {
         console.error("notify failed:", (e as Error).message);
+      }
+    }
+
+    // Sale-ending reminder: fire once per sale window, within 24 h of end.
+    if (result.saleEndsAt && result.regularPrice != null) {
+      const end = result.saleEndsAt;
+      const msLeft = end.getTime() - Date.now();
+      const notifiedFor = product.saleEndNotifiedFor
+        ? new Date(product.saleEndNotifiedFor).getTime()
+        : null;
+      const alreadyNotified = notifiedFor === end.getTime();
+      if (msLeft > 0 && msLeft <= SALE_ENDING_WINDOW_MS && !alreadyNotified) {
+        try {
+          const group = product.groupId
+            ? await getProductGroup(product.groupId)
+            : null;
+          await sendNotification(
+            buildSaleEndingNotification({
+              name: group?.title ?? result.name ?? product.name,
+              url: product.url,
+              endsAt: end,
+              salePrice: price,
+              regularPrice: result.regularPrice,
+              imageUrl: result.imageUrl ?? product.imageUrl ?? undefined,
+            }),
+          );
+          await updateProduct(product.id, { saleEndNotifiedFor: end });
+        } catch (e) {
+          console.error("sale-ending notify failed:", (e as Error).message);
+        }
       }
     }
     return { ok: true, changed, price, totalCost };
