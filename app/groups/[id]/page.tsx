@@ -77,15 +77,27 @@ export default async function GroupPage({
   const combined = buildCheapestOverTime(
     listings.map((l, i) => ({ listingId: l.id, history: historiesRaw[i] })),
   );
-  const trendPoints = combined.map((p) => ({
-    t: p.checkedAt.toISOString(),
-    v: p.minTotal,
-  }));
   const values = combined.map((p) => p.minTotal);
   const current = Number(cheapest.lastTotalCost);
   const previous = values.length >= 2 ? values[values.length - 2] : null;
   const low = values.length ? Math.min(...values) : current;
   const high = values.length ? Math.max(...values) : current;
+
+  // One series per listing so the chart can draw a line per store, with the
+  // cheapest listing first so its palette color stays stable (emerald).
+  const trendSeries = [...listings]
+    .sort((a, b) => (a.id === cheapest.id ? -1 : b.id === cheapest.id ? 1 : 0))
+    .map((l) => {
+      const rows = historiesByListing.get(l.id) ?? [];
+      const points = [...rows]
+        .reverse()
+        .map((h) => ({
+          t: new Date(h.checkedAt).toISOString(),
+          v: Number(h.totalCost),
+        }));
+      return { shop: l.shop, points };
+    })
+    .filter((s) => s.points.length > 0);
 
   // Unified timeline of every per-listing check, newest first.
   const timeline = listings
@@ -170,13 +182,13 @@ export default async function GroupPage({
         <section className="bg-card rounded-3xl p-6">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="text-xs uppercase tracking-wider text-muted">
-              Trend{multiStore && " · cheapest"}
+              Trend
             </h2>
             <div className="text-xs text-muted">
               low {money(low)} · high {money(high)}
             </div>
           </div>
-          <TrendChart points={trendPoints} height={160} className="w-full" />
+          <TrendChart series={trendSeries} height={160} className="w-full" />
         </section>
 
         <section className="bg-card rounded-3xl p-6 space-y-1">
