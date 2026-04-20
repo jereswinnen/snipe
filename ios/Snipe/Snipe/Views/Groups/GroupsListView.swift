@@ -19,14 +19,13 @@ struct GroupsListView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.snipeBackground)
                 .navigationTitle("Snipe")
+                .toolbarTitleDisplayMode(.inlineLarge)
                 .toolbar { toolbar }
                 .navigationDestination(for: Int.self) { groupId in
                     GroupDetailView(groupId: groupId)
                 }
         }
-        .task { await load() }
         .task(id: filter) { await load() }
-        .refreshable { await load() }
         .sheet(isPresented: $showAddSheet) {
             AddURLSheet(mode: .createGroup) {
                 Task { await load() }
@@ -59,67 +58,71 @@ struct GroupsListView: View {
 
     @ViewBuilder
     private var content: some View {
-        VStack(spacing: 0) {
-            FilterChips(active: $filter)
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-
-            if let errorMessage {
-                // Show the error inline so a silent fetch failure during a
-                // refresh doesn't just leave stale tiles on screen.
-                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-            }
-
-            if isLoading && groups.isEmpty {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if groups.isEmpty && errorMessage == nil {
-                ContentUnavailableView(
-                    "Nothing tracked yet",
-                    systemImage: "bag",
-                    description: Text("Tap the plus to add your first product URL.")
-                )
-            } else {
-                ScrollView {
-                    let columns = GridLayouts.gridItems(for: device.sizeClassX)
-                    let spacing = GridLayouts.spacing(for: device.sizeClassX)
-                    LazyVGrid(columns: columns, spacing: spacing) {
-                        ForEach(groups) { summary in
-                            NavigationLink(value: summary.group.id) {
-                                GroupCardView(summary: summary)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, spacing)
-                    .padding(.bottom, 24)
+        if isLoading && groups.isEmpty {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if groups.isEmpty && errorMessage == nil {
+            ContentUnavailableView(
+                "Nothing tracked yet",
+                systemImage: "bag",
+                description: Text("Tap the plus to add your first product URL.")
+            )
+        } else {
+            ScrollView {
+                if let errorMessage {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
                 }
+
+                let columns = GridLayouts.gridItems(for: device.sizeClassX)
+                let spacing = GridLayouts.spacing(for: device.sizeClassX)
+                LazyVGrid(columns: columns, spacing: spacing) {
+                    ForEach(groups) { summary in
+                        NavigationLink(value: summary.group.id) {
+                            GroupCardView(summary: summary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, spacing)
+                .padding(.bottom, 24)
             }
+            // Attach refreshable directly to the scrolling content. Placing
+            // it on the NavigationStack lets concurrent `.task` work cancel
+            // the refresh request mid-flight (NSURLErrorCancelled / -999).
+            .refreshable { await load() }
         }
     }
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItemGroup(placement: .topBarTrailing) {
             Button {
                 showAddSheet = true
             } label: {
                 Image(systemName: "plus")
             }
-        }
-        ToolbarItem(placement: .topBarTrailing) {
+
             Menu {
-                Button(role: .destructive) {
-                    Task { await session.signOut() }
-                } label: {
-                    Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+                Picker("Filter", selection: $filter) {
+                    Label("All", systemImage: "square.grid.2x2").tag(Medium?.none)
+                    Label("Digital", systemImage: "arrow.down.circle").tag(Medium?.some(.digital))
+                    Label("Physical", systemImage: "shippingbox").tag(Medium?.some(.physical))
+                }
+
+                Section {
+                    Button(role: .destructive) {
+                        Task { await session.signOut() }
+                    } label: {
+                        Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
                 }
             } label: {
-                Image(systemName: "ellipsis.circle")
+                Image(systemName: "ellipsis")
             }
         }
     }
@@ -132,23 +135,15 @@ struct GroupsListView: View {
             errorMessage = nil
         } catch NetworkError.unauthorized {
             await session.signOut()
+        } catch let NetworkError.transport(err as NSError)
+            where err.code == NSURLErrorCancelled
+        {
+            // Pull-to-refresh torn down before the request finished — not a
+            // user-visible error.
+        } catch is CancellationError {
+            // Same story for cooperative Swift Task cancellation.
         } catch {
             errorMessage = (error as? NetworkError)?.description ?? error.localizedDescription
         }
-    }
-}
-
-/// Segmented filter: All / Digital / Physical. Keeps URL-param parity with
-/// the web app.
-struct FilterChips: View {
-    @Binding var active: Medium?
-
-    var body: some View {
-        Picker("Medium", selection: $active) {
-            Text("All").tag(Medium?.none)
-            Text("Digital").tag(Medium?.some(.digital))
-            Text("Physical").tag(Medium?.some(.physical))
-        }
-        .pickerStyle(.segmented)
     }
 }

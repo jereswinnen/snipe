@@ -34,7 +34,6 @@ struct GroupDetailView: View {
         .background(Color.snipeBackground)
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
-        .refreshable { await load() }
         .toolbar { toolbar }
         .sheet(isPresented: $showAddStore) {
             AddURLSheet(mode: .attachTo(groupId: groupId)) {
@@ -76,6 +75,10 @@ struct GroupDetailView: View {
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
+        // Refreshable belongs on the scrolling content, not the outer view.
+        // Otherwise concurrent task work can cancel the request mid-flight
+        // (NSURLErrorCancelled / -999).
+        .refreshable { await load() }
     }
 
     private func hero(group: ProductGroup, cheapest: Listing) -> some View {
