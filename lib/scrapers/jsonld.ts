@@ -74,6 +74,52 @@ function isProductLike(node: unknown): node is Record<string, unknown> {
 const SCRIPT_RE =
   /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
 
+/**
+ * Some shops (allyourgames.nl) embed customer-review HTML inside a JSON
+ * string and leave raw newlines/tabs in it, which is illegal JSON. This
+ * pass walks the text with a tiny string/escape state machine and replaces
+ * bare control chars inside string literals with their escaped form, so
+ * JSON.parse can still handle them.
+ */
+export function sanitizeJsonControlChars(s: string): string {
+  let out = "";
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inString) {
+      if (escaped) {
+        out += c;
+        escaped = false;
+        continue;
+      }
+      if (c === "\\") {
+        out += c;
+        escaped = true;
+        continue;
+      }
+      if (c === '"') {
+        out += c;
+        inString = false;
+        continue;
+      }
+      const code = c.charCodeAt(0);
+      if (c === "\n") out += "\\n";
+      else if (c === "\r") out += "\\r";
+      else if (c === "\t") out += "\\t";
+      else if (code < 0x20)
+        out += "\\u" + code.toString(16).padStart(4, "0");
+      else out += c;
+      continue;
+    }
+    if (c === '"') {
+      inString = true;
+    }
+    out += c;
+  }
+  return out;
+}
+
 function pickVariant(
   variants: Record<string, unknown>[],
   pageUrl: string | undefined,
@@ -141,7 +187,15 @@ export function extractProductJsonLd(
     const text = m[1].trim();
     if (!text) continue;
     let parsed: unknown;
-    try { parsed = JSON.parse(text); } catch { continue; }
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      try {
+        parsed = JSON.parse(sanitizeJsonControlChars(text));
+      } catch {
+        continue;
+      }
+    }
     for (const node of nodesFromBlob(parsed)) {
       if (!isProductLike(node)) continue;
       const r = extractFromNode(node as Record<string, unknown>, pageUrl);

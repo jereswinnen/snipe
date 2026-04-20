@@ -30,6 +30,19 @@ test("allyourgames connector extracts name + price from fixture", async () => {
   assert.ok(r.price > 0);
 });
 
+test("allyourgames parses pages with review HTML containing raw newlines", async () => {
+  // Pages with customer-review blocks embedded in the Product JSON-LD
+  // have unescaped newlines/tabs in the string, which strict JSON.parse
+  // rejects. The extractor's lenient fallback should sanitize and recover.
+  const html = readFileSync("test/fixtures/allyourgames-review.html", "utf8");
+  const r = await allYourGames.scrape(
+    html,
+    "https://www.allyourgames.nl/nintendo-switch-hyrule-warriors-definitive-edition.html",
+  );
+  assert.ok(r.name.length > 0, `got name: ${r.name}`);
+  assert.ok(r.price > 0, `got price: ${r.price}`);
+});
+
 test("nedgame connector extracts name + price from fixture", async () => {
   const html = readFileSync("test/fixtures/nedgame.html", "utf8");
   const r = await nedgame.scrape(html, "https://www.nedgame.nl/x");
