@@ -4,23 +4,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, RefreshCw, Trash2 } from "lucide-react";
 
-type Props = { id: number };
+type Props = { id: number; listingIds: number[] };
 
-export default function ProductHeader({ id }: Props) {
+export default function GroupHeader({ id, listingIds }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<"check" | "delete" | null>(null);
 
-  async function checkNow() {
+  async function checkAll() {
     setBusy("check");
-    await fetch(`/api/products/${id}/check`, { method: "POST" });
+    await Promise.all(
+      listingIds.map((lid) =>
+        fetch(`/api/products/${lid}/check`, { method: "POST" }),
+      ),
+    );
     setBusy(null);
     router.refresh();
   }
 
   async function remove() {
-    if (!confirm("Delete this product?")) return;
+    if (!confirm("Delete this product and all its tracked stores?")) return;
     setBusy("delete");
-    await fetch(`/api/products/${id}`, { method: "DELETE" });
+    await fetch(`/api/groups/${id}`, { method: "DELETE" });
     window.location.href = "/";
   }
 
@@ -35,10 +39,10 @@ export default function ProductHeader({ id }: Props) {
       </Link>
       <div className="flex items-center gap-1">
         <button
-          onClick={checkNow}
+          onClick={checkAll}
           disabled={busy !== null}
-          aria-label="Reload now"
-          title="Reload now"
+          aria-label="Reload all"
+          title="Reload all stores"
           className="h-10 w-10 flex items-center justify-center rounded-full text-fg/70 hover:text-fg hover:bg-fg/5 disabled:opacity-40"
         >
           <RefreshCw size={18} className={busy === "check" ? "animate-spin" : ""} />
@@ -47,7 +51,7 @@ export default function ProductHeader({ id }: Props) {
           onClick={remove}
           disabled={busy !== null}
           aria-label="Delete"
-          title="Delete"
+          title="Delete this product"
           className="h-10 w-10 flex items-center justify-center rounded-full text-red-500 hover:bg-red-500/10 disabled:opacity-40"
         >
           <Trash2 size={18} />
