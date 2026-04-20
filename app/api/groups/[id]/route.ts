@@ -8,6 +8,8 @@ import {
   listProductsByGroup,
 } from "@/lib/db/queries";
 
+export const dynamic = "force-dynamic";
+
 const patch = z.object({
   title: z.string().min(1).optional(),
   imageUrl: z.string().url().nullable().optional(),

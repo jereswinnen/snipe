@@ -34,6 +34,15 @@ struct GroupsListView: View {
                 deepLinkGroupId = nil
             }
         }
+        // NavigationStack keeps the list view mounted while a detail view is
+        // pushed; `.task` won't re-fire on pop. Reload when the stack returns
+        // to root so actions taken in detail (reload, add store, delete) show
+        // up in the grid immediately.
+        .onChange(of: path.count) { _, newCount in
+            if newCount == 0 {
+                Task { await load() }
+            }
+        }
     }
 
     @ViewBuilder

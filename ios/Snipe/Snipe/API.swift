@@ -290,6 +290,9 @@ final class APIClient: @unchecked Sendable {
         }
         var request = URLRequest(url: url)
         request.httpMethod = method
+        // Snipe data is always live; skip URLSession's shared URL cache so a
+        // "Reload all" on one screen can't serve stale data on another.
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         if let bodyData {
             request.httpBody = bodyData
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")

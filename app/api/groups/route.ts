@@ -13,6 +13,8 @@ import {
   listGroupsWithCheapest,
 } from "@/lib/db/queries";
 
+export const dynamic = "force-dynamic";
+
 const createBody = z.object({
   url: z.string().url(),
   targetPrice: z.number().positive().optional(),

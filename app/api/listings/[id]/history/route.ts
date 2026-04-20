@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { respondError } from "@/lib/api/errors";
 import { getListingHistory, getProduct } from "@/lib/db/queries";
 
+export const dynamic = "force-dynamic";
+
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: Request, { params }: Ctx) {

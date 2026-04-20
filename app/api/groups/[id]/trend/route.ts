@@ -7,6 +7,8 @@ import {
 } from "@/lib/db/queries";
 import { buildCheapestOverTime, buildPerListingSeries } from "@/lib/trend";
 
+export const dynamic = "force-dynamic";
+
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: Request, { params }: Ctx) {
