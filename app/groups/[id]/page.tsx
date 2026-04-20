@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Truck, Download } from "lucide-react";
 import {
@@ -13,6 +14,18 @@ import ListingRow from "./ListingRow";
 import AddStoreButton from "./AddStoreButton";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id: rawId } = await params;
+  const id = Number(rawId);
+  if (!Number.isFinite(id)) return { title: "Product" };
+  const group = await getProductGroup(id);
+  return { title: group?.title ?? "Product" };
+}
 
 type HistoryRow = {
   id: number;
