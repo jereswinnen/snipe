@@ -2,6 +2,7 @@ import SwiftUI
 
 struct GroupsListView: View {
     @Environment(Session.self) private var session
+    @Environment(\.scenePhase) private var scenePhase
     @Binding var deepLinkGroupId: Int?
 
     @State private var groups: [GroupSummary] = []
@@ -40,6 +41,14 @@ struct GroupsListView: View {
         // up in the grid immediately.
         .onChange(of: path.count) { _, newCount in
             if newCount == 0 {
+                Task { await load() }
+            }
+        }
+        // Reload when the app returns from background. Without this the view
+        // stays mounted across suspend→resume and shows the pre-suspend
+        // snapshot; .task only fires on first appearance.
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
                 Task { await load() }
             }
         }
