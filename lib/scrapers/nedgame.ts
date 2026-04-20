@@ -37,8 +37,7 @@ export const nedgame: ShopConnector = {
     return { name, price, imageUrl };
   },
 
-  shipping(price, flags) {
-    if (flags.isPreOrder) return 0;
+  shipping(price) {
     return price >= 175 ? 0 : 6.99;
   },
 };

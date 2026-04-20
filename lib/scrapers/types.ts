@@ -13,7 +13,6 @@ export type ScrapeResult = {
 
 export type ShippingFlags = {
   soldByBol?: boolean | null;
-  isPreOrder?: boolean;
 };
 
 export type ShippingEnv = {

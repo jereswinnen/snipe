@@ -25,7 +25,6 @@ export const products = pgTable("products", {
   medium: text("medium").$type<Medium>().notNull().default("physical"),
   name: text("name").notNull(),
   imageUrl: text("image_url"),
-  isPreOrder: boolean("is_pre_order").notNull().default(false),
   soldByBol: boolean("sold_by_bol"),
   lastPrice: numeric("last_price", { precision: 10, scale: 2 }).notNull(),
   lastTotalCost: numeric("last_total_cost", { precision: 10, scale: 2 }).notNull(),

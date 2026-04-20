@@ -205,7 +205,6 @@ export default async function GroupPage({
                   shop: l.shop,
                   medium: l.medium,
                   url: l.url,
-                  isPreOrder: l.isPreOrder,
                   lastTotalCost: l.lastTotalCost,
                   lastRegularPrice: l.lastRegularPrice,
                   lastSaleEndsAt: l.lastSaleEndsAt,

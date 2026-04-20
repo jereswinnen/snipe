@@ -27,10 +27,7 @@ export async function checkProduct(product: Product): Promise<CheckOutcome> {
     const shipping = shippingCost(
       product.shop,
       result.price,
-      {
-        soldByBol: result.soldByBol ?? product.soldByBol,
-        isPreOrder: product.isPreOrder,
-      },
+      { soldByBol: result.soldByBol ?? product.soldByBol },
       { allYourGamesFlat: env.ALLYOURGAMES_SHIPPING },
     );
     const totalCost = Number((result.price + shipping).toFixed(2));

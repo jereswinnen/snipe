@@ -17,7 +17,6 @@ const body = z.object({
   url: z.string().url(),
   groupId: z.number().int().positive().optional(),
   targetPrice: z.number().positive().optional(),
-  isPreOrder: z.boolean().optional(),
 });
 
 export async function GET() {
@@ -28,7 +27,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const parsed = body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad_request" }, { status: 400 });
-  const { targetPrice, isPreOrder, groupId } = parsed.data;
+  const { targetPrice, groupId } = parsed.data;
   const url = canonicalizeUrl(parsed.data.url);
 
   const shop = shopFromUrl(url);
@@ -61,7 +60,7 @@ export async function POST(req: Request) {
   const shipping = shippingCost(
     shop,
     scrape.price,
-    { soldByBol: scrape.soldByBol ?? null, isPreOrder: isPreOrder ?? false },
+    { soldByBol: scrape.soldByBol ?? null },
     { allYourGamesFlat: env.ALLYOURGAMES_SHIPPING },
   );
   const totalCost = Number((scrape.price + shipping).toFixed(2));
@@ -83,7 +82,6 @@ export async function POST(req: Request) {
     medium: connector.medium,
     name: scrape.name,
     imageUrl: scrape.imageUrl,
-    isPreOrder: isPreOrder ?? false,
     soldByBol: scrape.soldByBol ?? null,
     lastPrice: price.toFixed(2),
     lastTotalCost: totalCost.toFixed(2),

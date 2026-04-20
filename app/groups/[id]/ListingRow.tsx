@@ -10,7 +10,6 @@ type Listing = {
   shop: string;
   medium: "digital" | "physical";
   url: string;
-  isPreOrder: boolean;
   lastTotalCost: string;
   lastRegularPrice: string | null;
   lastSaleEndsAt: Date | string | null;
@@ -50,7 +49,6 @@ export default function ListingRow({
 
   const meta: string[] = [listing.medium];
   if (isCheapest) meta.unshift("cheapest");
-  if (listing.isPreOrder) meta.push("pre-order");
   if (onSale) meta.push(`sale ends ${formatShortDate(listing.lastSaleEndsAt)}`);
 
   return (
