@@ -1,4 +1,9 @@
-import "dotenv/config";
+import { config } from "dotenv";
+
+// Match Next.js local-dev convention: .env.local takes precedence, then .env.
+// On Railway the real environment is already populated, so both calls are no-ops.
+config({ path: ".env.local" });
+config({ path: ".env" });
 
 function required(name: string): string {
   const v = process.env[name];
