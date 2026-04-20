@@ -4,8 +4,7 @@ JSON over HTTPS. Every authenticated request needs either a browser session
 cookie **or** a Bearer token (native clients). Both point at the same
 HMAC-signed session issued by `POST /api/auth/login`.
 
-Base URL: whatever your Railway deployment URL is (e.g.
-`https://snipe.up.railway.app`).
+Base URL: `https://snipe-production-333f.up.railway.app`
 
 ---
 
