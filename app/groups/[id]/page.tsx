@@ -6,7 +6,7 @@ import {
   getHistory,
 } from "@/lib/db/queries";
 import { money, relativeTime, formatDateTime, formatShortDate } from "@/lib/format";
-import { Sparkline } from "@/components/Sparkline";
+import { TrendChart } from "@/components/TrendChart";
 import GroupHeader from "./GroupHeader";
 import GroupControls from "./GroupControls";
 import ListingRow from "./ListingRow";
@@ -77,6 +77,10 @@ export default async function GroupPage({
   const combined = buildCheapestOverTime(
     listings.map((l, i) => ({ listingId: l.id, history: historiesRaw[i] })),
   );
+  const trendPoints = combined.map((p) => ({
+    t: p.checkedAt.toISOString(),
+    v: p.minTotal,
+  }));
   const values = combined.map((p) => p.minTotal);
   const current = Number(cheapest.lastTotalCost);
   const previous = values.length >= 2 ? values[values.length - 2] : null;
@@ -172,12 +176,7 @@ export default async function GroupPage({
               low {money(low)} · high {money(high)}
             </div>
           </div>
-          <Sparkline
-            values={values}
-            width={800}
-            height={120}
-            className="w-full h-auto"
-          />
+          <TrendChart points={trendPoints} height={160} className="w-full" />
         </section>
 
         <section className="bg-card rounded-3xl p-6 space-y-1">

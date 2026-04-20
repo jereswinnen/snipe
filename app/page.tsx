@@ -158,7 +158,7 @@ export default async function Home({
                   )}
                 </div>
 
-                <Sparkline values={values} width={160} height={28} />
+                <Sparkline values={values} height={28} className="w-full h-7" />
               </li>
             );
           })}

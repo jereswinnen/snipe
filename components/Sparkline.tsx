@@ -1,52 +1,70 @@
+"use client";
+import {
+  CategoryScale,
+  Chart as ChartJS,
+  LineController,
+  LineElement,
+  LinearScale,
+  PointElement,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
+
+ChartJS.register(
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+);
+
 type Props = {
-  values: number[];           // oldest → newest
-  width?: number;
+  values: number[]; // oldest → newest
   height?: number;
   className?: string;
 };
 
-export function Sparkline({ values, width = 120, height = 28, className }: Props) {
+const UP = "#ef4444";
+const DOWN = "#10b981";
+const FLAT = "#a3a3a3";
+
+export function Sparkline({ values, height = 28, className }: Props) {
   if (values.length < 2) {
-    return (
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="none"
-        className={className}
-        width={width}
-        height={height}
-      />
-    );
+    return <div style={{ height }} className={className} />;
   }
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const stepX = width / (values.length - 1);
-  const points = values
-    .map((v, i) => {
-      const x = i * stepX;
-      const y = height - ((v - min) / range) * height;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-  const last = values[values.length - 1];
   const first = values[0];
-  const stroke = last < first ? "var(--down)" : last > first ? "var(--up)" : "var(--flat)";
+  const last = values[values.length - 1];
+  const color = last < first ? DOWN : last > first ? UP : FLAT;
+
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-      width={width}
-      height={height}
-      className={className}
-      aria-hidden="true"
-    >
-      <polyline
-        fill="none"
-        stroke={stroke}
-        strokeWidth="1.5"
-        vectorEffect="non-scaling-stroke"
-        points={points}
+    <div style={{ height }} className={className ?? "w-full"}>
+      <Line
+        data={{
+          labels: values.map((_, i) => i),
+          datasets: [
+            {
+              data: values,
+              borderColor: color,
+              borderWidth: 1.5,
+              pointRadius: 0,
+              tension: 0.3,
+            },
+          ],
+        }}
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: { display: false },
+            y: { display: false },
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false },
+          },
+          elements: { line: { capBezierPoints: true } },
+        }}
       />
-    </svg>
+    </div>
   );
 }
