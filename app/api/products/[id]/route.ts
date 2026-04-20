@@ -28,10 +28,14 @@ export async function DELETE(_req: Request, { params }: Ctx) {
 
   await deleteProduct(id);
 
+  let deletedGroup = false;
   if (product.groupId != null) {
     const remaining = await countProductsInGroup(product.groupId);
-    if (remaining === 0) await deleteProductGroup(product.groupId);
+    if (remaining === 0) {
+      await deleteProductGroup(product.groupId);
+      deletedGroup = true;
+    }
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, deletedGroup });
 }
