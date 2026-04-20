@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { Truck, Download } from "lucide-react";
-import { asc, eq, inArray } from "drizzle-orm";
+import { asc, inArray } from "drizzle-orm";
 import { db, schema } from "@/lib/db/client";
 import { listGroupsWithCheapest } from "@/lib/db/queries";
 import { money, relativeTime, formatShortDate } from "@/lib/format";
 import { Sparkline } from "@/components/Sparkline";
+import { shopFaviconUrl } from "@/lib/shops";
 import HeaderActions from "./HeaderActions";
 
 export const dynamic = "force-dynamic";
@@ -39,16 +40,21 @@ export default async function Home({
     }
   }
 
-  const storeCounts = new Map<number, number>();
+  const shopsByGroup = new Map<number, string[]>();
   if (rowsRaw.length) {
     const groupIds = rowsRaw.map((r) => r.group_id as number);
-    const counts = await db
-      .select({ groupId: schema.products.groupId })
+    const memberships = await db
+      .select({
+        groupId: schema.products.groupId,
+        shop: schema.products.shop,
+      })
       .from(schema.products)
       .where(inArray(schema.products.groupId, groupIds));
-    for (const c of counts) {
-      if (c.groupId == null) continue;
-      storeCounts.set(c.groupId, (storeCounts.get(c.groupId) ?? 0) + 1);
+    for (const m of memberships) {
+      if (m.groupId == null) continue;
+      const arr = shopsByGroup.get(m.groupId) ?? [];
+      arr.push(m.shop);
+      shopsByGroup.set(m.groupId, arr);
     }
   }
 
@@ -86,7 +92,9 @@ export default async function Home({
               lastRegularPrice != null;
             const hit =
               groupTarget != null && Number(lastTotalCost) <= Number(groupTarget);
-            const storeCount = storeCounts.get(groupId) ?? 1;
+            // Cheapest shop first (known from the main query), then the rest.
+            const allShops = shopsByGroup.get(groupId) ?? [shop];
+            const shops = [shop, ...allShops.filter((s) => s !== shop)];
 
             return (
               <li
@@ -97,12 +105,21 @@ export default async function Home({
                 }
               >
                 <div className="w-full flex items-center justify-between text-[11px] uppercase tracking-wider text-muted">
-                  <span>
-                    {shop}
-                    {storeCount > 1 && (
-                      <span className="ml-1 text-fg/50">· {storeCount} stores</span>
-                    )}
-                  </span>
+                  <div className="flex items-center">
+                    {shops.map((s, i) => (
+                      <img
+                        key={`${s}-${i}`}
+                        src={shopFaviconUrl(s)}
+                        alt={s}
+                        title={s}
+                        className={
+                          "h-4 w-4 rounded-sm ring-2 ring-card " +
+                          (i > 0 ? "-ml-1.5" : "")
+                        }
+                        style={{ zIndex: shops.length - i }}
+                      />
+                    ))}
+                  </div>
                   <span className="flex items-center gap-1">
                     {lastError && (
                       <span
