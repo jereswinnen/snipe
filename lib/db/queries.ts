@@ -1,5 +1,6 @@
 import { eq, desc, asc, sql } from "drizzle-orm";
 import { db, schema } from "./client";
+import type { Product, ProductGroup } from "./schema";
 
 // --- listings (legacy name: products) ---------------------------------------
 
@@ -95,35 +96,33 @@ export async function deleteProductGroup(id: number) {
   await db.delete(schema.productGroups).where(eq(schema.productGroups.id, id));
 }
 
+export type GroupWithCheapest = {
+  group: ProductGroup;
+  cheapest: Product;
+};
+
 /**
- * Returns every group with the one listing that currently has the lowest
- * total cost. Groups without listings are excluded.
+ * Returns every group together with the one listing that currently has the
+ * lowest total cost. Groups without listings are excluded. Sorted by most
+ * recently updated group.
  */
-export async function listGroupsWithCheapest() {
-  const rows = await db.execute(sql`
-    SELECT DISTINCT ON (g.id)
-      g.id               AS group_id,
-      g.title            AS group_title,
-      g.image_url        AS group_image_url,
-      g.target_price     AS group_target_price,
-      g.updated_at       AS group_updated_at,
-      p.*
-    FROM product_groups g
-    JOIN products p ON p.group_id = g.id
-    ORDER BY g.id, p.last_total_cost ASC, p.id ASC
-  `);
-  type Row = {
-    group_id: number;
-    group_title: string;
-    group_image_url: string | null;
-    group_target_price: string | null;
-    group_updated_at: Date;
-  } & Record<string, unknown>;
-  const list = rows.rows as Row[];
-  list.sort((a, b) => {
-    const au = new Date(a.group_updated_at as Date).getTime();
-    const bu = new Date(b.group_updated_at as Date).getTime();
-    return bu - au;
-  });
-  return list;
+export async function listGroupsWithCheapest(): Promise<GroupWithCheapest[]> {
+  const rows = await db
+    .selectDistinctOn([schema.productGroups.id], {
+      group: schema.productGroups,
+      cheapest: schema.products,
+    })
+    .from(schema.productGroups)
+    .innerJoin(
+      schema.products,
+      eq(schema.products.groupId, schema.productGroups.id),
+    )
+    .orderBy(
+      asc(schema.productGroups.id),
+      asc(schema.products.lastTotalCost),
+      asc(schema.products.id),
+    );
+  return rows.sort(
+    (a, b) => b.group.updatedAt.getTime() - a.group.updatedAt.getTime(),
+  );
 }

@@ -22,10 +22,10 @@ export default async function Home({
 
   const rowsRaw = await listGroupsWithCheapest();
   const rows = mediumFilter
-    ? rowsRaw.filter((r) => r.medium === mediumFilter)
+    ? rowsRaw.filter((r) => r.cheapest.medium === mediumFilter)
     : rowsRaw;
 
-  const productIds = rows.map((r) => r.id as number);
+  const productIds = rows.map((r) => r.cheapest.id);
   const historyByProduct = new Map<number, number[]>();
   if (productIds.length) {
     const hist = await db
@@ -42,7 +42,7 @@ export default async function Home({
 
   const shopsByGroup = new Map<number, string[]>();
   if (rowsRaw.length) {
-    const groupIds = rowsRaw.map((r) => r.group_id as number);
+    const groupIds = rowsRaw.map((r) => r.group.id);
     const memberships = await db
       .select({
         groupId: schema.products.groupId,
@@ -69,36 +69,25 @@ export default async function Home({
         <FilterChips active={mediumFilter} />
 
         <ul className="grid gap-1 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
-          {rows.map((row) => {
-            const groupId = row.group_id as number;
-            const title = (row.group_title as string) ?? (row.name as string);
-            const image = (row.group_image_url as string | null) ?? (row.image_url as string | null);
-            const productId = row.id as number;
-            const medium = row.medium as "digital" | "physical";
-            const shop = row.shop as string;
-            const lastTotalCost = row.last_total_cost as string;
-            const lastRegularPrice = row.last_regular_price as string | null;
-            const lastSaleEndsAt = row.last_sale_ends_at as Date | null;
-            const lastCheckedAt = row.last_checked_at as Date | null;
-            const lastError = row.last_error as string | null;
-            const groupTarget = row.group_target_price as string | null;
-
-            const values = historyByProduct.get(productId) ?? [];
-            const current = Number(lastTotalCost);
+          {rows.map(({ group, cheapest }) => {
+            const image = group.imageUrl ?? cheapest.imageUrl;
+            const values = historyByProduct.get(cheapest.id) ?? [];
+            const current = Number(cheapest.lastTotalCost);
             const previous = values.length >= 2 ? values[values.length - 2] : null;
             const onSale =
-              lastSaleEndsAt != null &&
-              new Date(lastSaleEndsAt).getTime() > Date.now() &&
-              lastRegularPrice != null;
+              cheapest.lastSaleEndsAt != null &&
+              new Date(cheapest.lastSaleEndsAt).getTime() > Date.now() &&
+              cheapest.lastRegularPrice != null;
             const hit =
-              groupTarget != null && Number(lastTotalCost) <= Number(groupTarget);
+              group.targetPrice != null &&
+              Number(cheapest.lastTotalCost) <= Number(group.targetPrice);
             // Cheapest shop first (known from the main query), then the rest.
-            const allShops = shopsByGroup.get(groupId) ?? [shop];
-            const shops = [shop, ...allShops.filter((s) => s !== shop)];
+            const allShops = shopsByGroup.get(group.id) ?? [cheapest.shop];
+            const shops = [cheapest.shop, ...allShops.filter((s) => s !== cheapest.shop)];
 
             return (
               <li
-                key={groupId}
+                key={group.id}
                 className={
                   "bg-card rounded-3xl p-5 flex flex-col items-center text-center gap-3 " +
                   (hit ? "ring-2 ring-emerald-500/60" : "")
@@ -121,17 +110,17 @@ export default async function Home({
                     ))}
                   </div>
                   <span className="flex items-center gap-1">
-                    {lastError && (
+                    {cheapest.lastError && (
                       <span
                         className="inline-block h-1.5 w-1.5 rounded-full bg-red-500"
-                        title={lastError}
+                        title={cheapest.lastError}
                       />
                     )}
-                    {relativeTime(lastCheckedAt)}
+                    {relativeTime(cheapest.lastCheckedAt)}
                   </span>
                 </div>
 
-                <Link href={`/groups/${groupId}`} className="block">
+                <Link href={`/groups/${group.id}`} className="block">
                   {image ? (
                     <img
                       src={image}
@@ -144,29 +133,29 @@ export default async function Home({
                 </Link>
 
                 <Link
-                  href={`/groups/${groupId}`}
+                  href={`/groups/${group.id}`}
                   className="text-sm font-medium leading-snug line-clamp-2 hover:underline"
                 >
-                  {title}
+                  {group.title}
                 </Link>
 
                 <div className="flex flex-col items-center gap-1">
                   <div className="text-lg font-semibold flex items-center gap-1">
-                    {medium === "digital" ? (
+                    {cheapest.medium === "digital" ? (
                       <Download size={14} aria-hidden="true" className="text-muted" />
                     ) : (
                       <Truck size={14} aria-hidden="true" className="text-muted" />
                     )}
-                    {money(lastTotalCost)}
+                    {money(cheapest.lastTotalCost)}
                     {onSale && (
                       <span className="ml-1 text-muted line-through text-xs font-normal">
-                        {money(lastRegularPrice!)}
+                        {money(cheapest.lastRegularPrice!)}
                       </span>
                     )}
                   </div>
                   {onSale ? (
                     <div className="text-xs text-emerald-600 font-medium">
-                      sale ends {formatShortDate(lastSaleEndsAt)}
+                      sale ends {formatShortDate(cheapest.lastSaleEndsAt)}
                     </div>
                   ) : (
                     previous != null && previous !== current && (
