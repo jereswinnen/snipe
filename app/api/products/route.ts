@@ -16,7 +16,7 @@ import {
 const body = z.object({
   url: z.string().url(),
   groupId: z.number().int().positive().optional(),
-  targetPrice: z.number().positive().optional(),
+  targetPrice: z.number().positive().optional(), // only honoured when creating a new group
 });
 
 export async function GET() {
@@ -88,7 +88,6 @@ export async function POST(req: Request) {
     lastRegularPrice:
       scrape.regularPrice != null ? scrape.regularPrice.toFixed(2) : null,
     lastSaleEndsAt: scrape.saleEndsAt ?? null,
-    targetPrice: null,
     lastCheckedAt: new Date(),
   });
   await insertHistory({

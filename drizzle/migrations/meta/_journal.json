@@ -43,6 +43,13 @@
       "when": 1776678159436,
       "tag": "0005_military_hitman",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776678917033,
+      "tag": "0006_old_hitman",
+      "breakpoints": true
     }
   ]
 }
