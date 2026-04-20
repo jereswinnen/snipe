@@ -12,6 +12,7 @@ type ApnsPayload = {
     sound?: string;
     "thread-id"?: string;
     "interruption-level"?: "passive" | "active" | "time-sensitive";
+    "mutable-content"?: 1;
   };
   // Custom keys are forwarded verbatim; the iOS app reads them.
   [key: string]: unknown;
@@ -125,6 +126,10 @@ export async function fanoutApnsNotification(
       alert: { title: payload.title, body: payload.message },
       sound: payload.sound === "warm_soft_error" ? "default" : "default",
       "interruption-level": payload.interruption_level,
+      // mutable-content lets the iOS Notification Service Extension
+      // download `image_url` and attach it as a thumbnail before the
+      // banner is shown. No-op when image_url is absent.
+      ...(payload.image_url ? { "mutable-content": 1 as const } : {}),
     },
     open_url: payload.open_url,
     ...(payload.image_url ? { image_url: payload.image_url } : {}),
