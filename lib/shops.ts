@@ -10,6 +10,7 @@ const SHOP_DOMAIN: Record<Shop, string> = {
   nedgame: "nedgame.nl",
   nintendo: "nintendo.com",
   dreamland: "dreamland.be",
+  playstation: "playstation.com",
 };
 
 export function shopFaviconUrl(shop: string, size = 64): string {
