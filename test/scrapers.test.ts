@@ -76,6 +76,12 @@ test("shopFromUrl detects hostnames", () => {
     shopFromUrl("https://www.dreamland.be/nl/producten/x/12345"),
     "dreamland",
   );
+  assert.equal(
+    shopFromUrl(
+      "https://store.playstation.com/nl-be/product/UP6312-PPSA26136_00-0074184226734561",
+    ),
+    "playstation",
+  );
   assert.equal(shopFromUrl("https://example.com/"), null);
 });
 
@@ -84,4 +90,19 @@ test("getConnector returns connector per shop", () => {
   assert.equal(getConnector("nedgame").shop, "nedgame");
   assert.equal(getConnector("nintendo").shop, "nintendo");
   assert.equal(getConnector("nintendo").medium, "digital");
+  assert.equal(getConnector("playstation").medium, "digital");
+});
+
+test("playstation connector extracts name + price + sale from fixture", async () => {
+  const { playstation } = await import("../lib/scrapers/playstation.ts");
+  const html = readFileSync("test/fixtures/playstation.html", "utf8");
+  const r = await playstation.scrape(
+    html,
+    "https://store.playstation.com/nl-be/product/UP6312-PPSA26136_00-0074184226734561",
+  );
+  assert.equal(r.name, "Avowed Premium Edition");
+  assert.equal(r.price, 41.99);
+  assert.equal(r.regularPrice, 59.99);
+  assert.ok(r.saleEndsAt instanceof Date);
+  assert.match(r.imageUrl ?? "", /image\.api\.playstation\.com/);
 });

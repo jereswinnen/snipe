@@ -8,7 +8,7 @@ enum Medium: String, Codable, CaseIterable, Sendable {
 }
 
 enum Shop: String, Codable, Hashable, Sendable {
-    case bol, coolblue, allyourgames, nedgame, nintendo, dreamland
+    case bol, coolblue, allyourgames, nedgame, nintendo, dreamland, playstation
 
     /// Opaque fallback for shops we don't know yet. Keeps decoding resilient
     /// if the server adds a shop before the app is updated.

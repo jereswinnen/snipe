@@ -12,6 +12,7 @@ enum ShopFavicon {
         case "nedgame": domain = "nedgame.nl"
         case "nintendo": domain = "nintendo.com"
         case "dreamland": domain = "dreamland.be"
+        case "playstation": domain = "playstation.com"
         default: domain = "\(shop).com"
         }
         return URL(string: "https://www.google.com/s2/favicons?domain=\(domain)&sz=64")

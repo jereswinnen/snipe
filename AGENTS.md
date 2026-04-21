@@ -82,6 +82,7 @@ Each lives at `lib/scrapers/<shop>.ts` and registers in `lib/scrapers/index.ts`.
 | `nedgame`     | nedgame.nl               | physical  | JSON-LD with cheerio fallback. Free ≥ €175, else €6.99.                |
 | `nintendo`    | nintendo.com (all locales) | digital | og:title + og:image + `na_nsuid` extraction → `api.ec.nintendo.com/v1/price`. Free shipping. |
 | `dreamland`   | dreamland.be             | physical  | JSON-LD ProductGroup variant. Free ≥ €50, else €4.99.                  |
+| `playstation` | store.playstation.com    | digital   | Regex over Apollo hydration blobs (`invariantName`, `basePriceValue`, `discountedValue`, `endTime`). Free shipping. Akamai-backed — same long-delay treatment as Bol in the cron. |
 
 Add a new shop by implementing `ShopConnector` (`lib/scrapers/types.ts`), registering it in `index.ts`, adding a mapping in `ios/.../Utilities/ShopFavicon.swift`, and extending the `Shop` enum in `lib/db/schema.ts` + `ios/.../Models/Models.swift`.
 

@@ -6,6 +6,7 @@ import { allYourGames } from "./allyourgames";
 import { nedgame } from "./nedgame";
 import { nintendo } from "./nintendo";
 import { dreamland } from "./dreamland";
+import { playstation } from "./playstation";
 
 const connectors: ShopConnector[] = [
   bol,
@@ -14,6 +15,7 @@ const connectors: ShopConnector[] = [
   nedgame,
   nintendo,
   dreamland,
+  playstation,
 ];
 const byShop = new Map<Shop, ShopConnector>(connectors.map((c) => [c.shop, c]));
 

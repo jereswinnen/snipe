@@ -18,14 +18,16 @@ function shuffle<T>(arr: T[]): T[] {
 
 /**
  * How long to wait after a given shop's request finishes, before the next
- * product. Bol sits behind Akamai's bot manager; a sub-second gap between
- * requests trips a cooldown that 403s every follow-up for tens of seconds.
- * 8–12 s of jitter + the shuffle (which interleaves Bol with other shops)
- * keeps consecutive Bol hits ~10–20 s apart, which is slow enough to
- * avoid the burst trigger in practice.
+ * product. Bol and PlayStation Store both sit behind Akamai's bot
+ * manager; a sub-second gap between requests trips a cooldown that 403s
+ * every follow-up for tens of seconds. 8–12 s of jitter + the shuffle
+ * (which interleaves them with other shops) keeps consecutive hits
+ * ~10–20 s apart, slow enough to avoid the burst trigger in practice.
  */
 function postRequestDelayMs(shop: Shop): number {
-  if (shop === "bol") return 8000 + Math.random() * 4000;
+  if (shop === "bol" || shop === "playstation") {
+    return 8000 + Math.random() * 4000;
+  }
   return 500;
 }
 

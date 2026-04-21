@@ -372,7 +372,7 @@ struct Listing: Codable {
   let id: Int
   let groupId: Int?
   let url: String
-  let shop: String                // "bol" | "coolblue" | "allyourgames" | "nedgame" | "nintendo" | "dreamland"
+  let shop: String                // "bol" | "coolblue" | "allyourgames" | "nedgame" | "nintendo" | "dreamland" | "playstation"
   let medium: String              // "digital" | "physical"
   let name: String
   let imageUrl: String?
