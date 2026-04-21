@@ -1,6 +1,6 @@
 # Snipe — Price Tracker
 
-Personal price tracker for Bol.com, Coolblue, AllYourGames.nl and Nedgame.nl. Sends a brrr.now push when total cost (price + shipping) changes.
+Personal price tracker for Bol.com, Coolblue, AllYourGames.nl, Nintendo eShop, Dreamland and PlayStation Store. Sends a brrr.now push when total cost (price + shipping) changes.
 
 Design and rationale: [`docs/superpowers/specs/2026-04-19-price-tracker-design.md`](docs/superpowers/specs/2026-04-19-price-tracker-design.md).
 Implementation plan: [`docs/superpowers/plans/2026-04-19-price-tracker.md`](docs/superpowers/plans/2026-04-19-price-tracker.md).
@@ -62,7 +62,6 @@ The cron work is negligible cost — each firing runs a few seconds.
 | Bol.com | JSON-LD | €2.99 under €25 (sold-by-Bol only), free ≥€25, third-party €0 |
 | Coolblue | JSON-LD | Always €0 |
 | AllYourGames.nl | JSON-LD | Flat (default €5.95) |
-| Nedgame.nl | JSON-LD + DOM fallback | €6.99 under €175, free ≥€175, pre-orders free |
 
 Adding a shop:
 1. Add the shop key to `shops` in `lib/db/schema.ts`.

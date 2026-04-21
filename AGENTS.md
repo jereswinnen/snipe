@@ -79,7 +79,6 @@ Each lives at `lib/scrapers/<shop>.ts` and registers in `lib/scrapers/index.ts`.
 | `bol`         | bol.com                  | physical  | JSON-LD. Always-free shipping. Has diagnostic messaging on scrape fail (Akamai is finicky). |
 | `coolblue`    | coolblue.be / .nl        | physical  | JSON-LD. Free shipping.                                                |
 | `allyourgames`| allyourgames.nl          | physical  | JSON-LD. Flat fee from `ALLYOURGAMES_SHIPPING` env (€5.95 default).    |
-| `nedgame`     | nedgame.nl               | physical  | JSON-LD with cheerio fallback. Free ≥ €175, else €6.99.                |
 | `nintendo`    | nintendo.com (all locales) | digital | og:title + og:image + `na_nsuid` extraction → `api.ec.nintendo.com/v1/price`. Free shipping. |
 | `dreamland`   | dreamland.be             | physical  | JSON-LD ProductGroup variant. Free ≥ €50, else €4.99.                  |
 | `playstation` | store.playstation.com    | digital   | Regex over Apollo hydration blobs (`invariantName`, `basePriceValue`, `discountedValue`, `endTime`). Free shipping. Akamai-backed — same long-delay treatment as Bol in the cron. |

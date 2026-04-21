@@ -9,7 +9,6 @@ enum ShopFavicon {
         case "bol": domain = "bol.com"
         case "coolblue": domain = "coolblue.be"
         case "allyourgames": domain = "allyourgames.nl"
-        case "nedgame": domain = "nedgame.nl"
         case "nintendo": domain = "nintendo.com"
         case "dreamland": domain = "dreamland.be"
         case "playstation": domain = "playstation.com"

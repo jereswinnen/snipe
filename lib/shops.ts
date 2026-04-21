@@ -7,7 +7,6 @@ const SHOP_DOMAIN: Record<Shop, string> = {
   bol: "bol.com",
   coolblue: "coolblue.be",
   allyourgames: "allyourgames.nl",
-  nedgame: "nedgame.nl",
   nintendo: "nintendo.com",
   dreamland: "dreamland.be",
   playstation: "playstation.com",

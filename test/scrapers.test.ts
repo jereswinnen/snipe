@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 import { bol } from "../lib/scrapers/bol.ts";
 import { coolblue } from "../lib/scrapers/coolblue.ts";
 import { allYourGames } from "../lib/scrapers/allyourgames.ts";
-import { nedgame } from "../lib/scrapers/nedgame.ts";
 import { dreamland } from "../lib/scrapers/dreamland.ts";
 import { shopFromUrl, getConnector } from "../lib/scrapers/index.ts";
 
@@ -43,13 +42,6 @@ test("allyourgames parses pages with review HTML containing raw newlines", async
   assert.ok(r.price > 0, `got price: ${r.price}`);
 });
 
-test("nedgame connector extracts name + price from fixture", async () => {
-  const html = readFileSync("test/fixtures/nedgame.html", "utf8");
-  const r = await nedgame.scrape(html, "https://www.nedgame.nl/x");
-  assert.ok(r.name.length > 0);
-  assert.ok(r.price > 0);
-});
-
 test("dreamland connector extracts name + price from fixture", async () => {
   const html = readFileSync("test/fixtures/dreamland.html", "utf8");
   const r = await dreamland.scrape(
@@ -67,7 +59,6 @@ test("shopFromUrl detects hostnames", () => {
   assert.equal(shopFromUrl("https://www.coolblue.be/nl/product/x"), "coolblue");
   assert.equal(shopFromUrl("https://www.coolblue.nl/product/x"), "coolblue");
   assert.equal(shopFromUrl("https://www.allyourgames.nl/x"), "allyourgames");
-  assert.equal(shopFromUrl("https://www.nedgame.nl/x"), "nedgame");
   assert.equal(
     shopFromUrl("https://www.nintendo.com/nl-be/Games/x-123.html"),
     "nintendo",
@@ -87,7 +78,6 @@ test("shopFromUrl detects hostnames", () => {
 
 test("getConnector returns connector per shop", () => {
   assert.equal(getConnector("bol").shop, "bol");
-  assert.equal(getConnector("nedgame").shop, "nedgame");
   assert.equal(getConnector("nintendo").shop, "nintendo");
   assert.equal(getConnector("nintendo").medium, "digital");
   assert.equal(getConnector("playstation").medium, "digital");

@@ -18,16 +18,6 @@ test("allyourgames uses flat configured rate", () => {
   assert.equal(shippingCost("allyourgames", 30, {}, { allYourGamesFlat: 4.5 }), 4.5);
 });
 
-test("nedgame under 175 is 6.99", () => {
-  assert.equal(shippingCost("nedgame", 30, {}), 6.99);
-  assert.equal(shippingCost("nedgame", 174.99, {}), 6.99);
-});
-
-test("nedgame at or above 175 is free", () => {
-  assert.equal(shippingCost("nedgame", 175, {}), 0);
-  assert.equal(shippingCost("nedgame", 300, {}), 0);
-});
-
 test("nintendo digital is always free", () => {
   assert.equal(shippingCost("nintendo", 1, {}), 0);
   assert.equal(shippingCost("nintendo", 59.99, {}), 0);

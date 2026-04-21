@@ -2,7 +2,7 @@ import {
   pgTable, serial, text, boolean, numeric, timestamp, integer, index,
 } from "drizzle-orm/pg-core";
 
-export const shops = ["bol", "coolblue", "allyourgames", "nedgame", "nintendo", "dreamland", "playstation"] as const;
+export const shops = ["bol", "coolblue", "allyourgames", "nintendo", "dreamland", "playstation"] as const;
 export type Shop = (typeof shops)[number];
 
 export const mediums = ["digital", "physical"] as const;

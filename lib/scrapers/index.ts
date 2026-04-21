@@ -3,7 +3,6 @@ import type { ShopConnector } from "./types";
 import { bol } from "./bol";
 import { coolblue } from "./coolblue";
 import { allYourGames } from "./allyourgames";
-import { nedgame } from "./nedgame";
 import { nintendo } from "./nintendo";
 import { dreamland } from "./dreamland";
 import { playstation } from "./playstation";
@@ -12,7 +11,6 @@ const connectors: ShopConnector[] = [
   bol,
   coolblue,
   allYourGames,
-  nedgame,
   nintendo,
   dreamland,
   playstation,
